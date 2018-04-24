@@ -235,6 +235,9 @@ function _sendEvent(store: Object, name: string, data: Object) {
     // the native JitsiMeetView which hosts it.
     const externalAPIScope = getAppProp(store, 'externalAPIScope');
 
+    console.info(
+        `EXT EVENT ${name} URL: ${data.url} DATA: ${JSON.stringify(data)}`);
+
     externalAPIScope
         && NativeModules.ExternalAPI.sendEvent(name, data, externalAPIScope);
 }
