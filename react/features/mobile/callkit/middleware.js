@@ -226,7 +226,7 @@ function _sessionEnded(store, next, action) {
  * FIXME.
  *
  * @param {Store} store - FIXME.
- * @param {Object} url - FIXME.
+ * @param {Object} action - FIXME.
  * @returns {string|undefined}
  * @private
  */
