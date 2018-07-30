@@ -20,7 +20,8 @@ export const EVENTS = {
     permissions: 'permissions',
     start: 'start',
     stop: 'stop',
-    supported: 'supported'
+    supported: 'supported',
+    startScreenSharing: 'startScreenSharing'
 };
 
 /**

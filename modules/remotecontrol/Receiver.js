@@ -82,6 +82,16 @@ export default class Receiver extends RemoteControlParticipant {
      * @param {boolean} enabled - The new state.
      * @returns {void}
      */
+    enable(enabled: boolean) {
+        return this._enable(enabled);
+    }
+
+    /**
+     * Enables / Disables the remote control.
+     *
+     * @param {boolean} enabled - The new state.
+     * @returns {void}
+     */
     _enable(enabled: boolean) {
         if (this._enabled === enabled) {
             return;
@@ -173,6 +183,12 @@ export default class Receiver extends RemoteControlParticipant {
             return;
         }
 
+        if (message.type === EVENTS.startScreenSharing) {
+            APP.conference.toggleScreenSharing(message.screen_id);
+
+            return;
+        }
+
         if (this._enabled) {
             if (this._controller === null
                     && message.type === EVENTS.permissions
@@ -180,8 +196,14 @@ export default class Receiver extends RemoteControlParticipant {
                 const userId = participant.getId();
 
                 this.emit(RemoteControlEvents.ACTIVE_CHANGED, true);
-                APP.store.dispatch(
-                    openRemoteControlAuthorizationDialog(userId));
+                //APP.store.dispatch(
+                //    openRemoteControlAuthorizationDialog(userId));
+                this.grant(userId);
+                APP.UI.messageHandler.notify(
+                        'dialog.remoteControlTitle',
+                        'dialog.remoteControlStartMessage'
+                );
+
             } else if (this._controller === participant.getId()) {
                 if (message.type === EVENTS.stop) {
                     this._stop();

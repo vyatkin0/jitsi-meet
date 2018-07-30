@@ -8,6 +8,7 @@ import { Popover } from '../../base/popover';
 import {
     MuteButton,
     KickButton,
+    ShareScreenButton,
     RemoteControlButton,
     RemoteVideoMenu,
     VolumeSlider
@@ -50,6 +51,12 @@ class RemoteVideoMenuTriggerButton extends Component<*> {
          * the participant.
          */
         onRemoteControlToggle: PropTypes.func,
+
+        /**
+         * Callback to invoke choosing to start a remote screen sharing
+         * the participant.
+         */
+        onRemoteScreenShareToggle: PropTypes.func,
 
         /**
          * Callback to invoke when changing the level of the participant's
@@ -145,6 +152,7 @@ class RemoteVideoMenuTriggerButton extends Component<*> {
             isAudioMuted,
             isModerator,
             onRemoteControlToggle,
+            onRemoteScreenShareToggle,
             onVolumeChange,
             remoteControlState,
             participantID
@@ -162,6 +170,12 @@ class RemoteVideoMenuTriggerButton extends Component<*> {
             buttons.push(
                 <KickButton
                     key = 'kick'
+                    participantID = { participantID } />
+            );
+            buttons.push(
+                <ShareScreenButton
+                    key = 'share-screen'
+                    onClick = { onRemoteScreenShareToggle }
                     participantID = { participantID } />
             );
         }

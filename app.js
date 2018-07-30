@@ -6,9 +6,15 @@
 // things are broken there (not only the icon).
 import './react/features/base/react/prop-types-polyfill.js';
 
-import 'jquery';
+import $ from 'jquery';
 import 'jquery-contextmenu';
 import 'jQuery-Impromptu';
+
+//const $ = require('jquery');
+
+window.jQuery = $;
+window.$ = $;
+
 import 'autosize';
 
 import conference from './conference';

@@ -83,13 +83,6 @@ const config = {
             },
             test: /\.jsx?$/
         }, {
-            // Expose jquery as the globals $ and jQuery because it is expected
-            // to be available in such a form by multiple jitsi-meet
-            // dependencies including lib-jitsi-meet.
-
-            loader: 'expose-loader?$!expose-loader?jQuery',
-            test: /\/node_modules\/jquery\/.*\.js$/
-        }, {
             // Allow CSS to be imported into JavaScript.
 
             test: /\.css$/,
@@ -111,7 +104,15 @@ const config = {
         publicPath: '/libs/',
         sourceMapFilename: `[name].${minimize ? 'min' : 'js'}.map`
     },
-    plugins,
+
+    //plugins,
+
+    plugins: [
+        new webpack.ProvidePlugin({
+            $: 'jquery',
+            jQuery: 'jquery'
+        })
+    ],
     resolve: {
         alias: {
             jquery: `jquery/dist/jquery${minimize ? '.min' : ''}.js`

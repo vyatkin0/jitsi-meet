@@ -22,7 +22,15 @@ import {
 } from '../../../react/features/remote-video-menu';
 /* eslint-enable no-unused-vars */
 
+import {
+    EVENTS,
+    REMOTE_CONTROL_MESSAGE_NAME
+} from '../../../service/remotecontrol/Constants';
+
 const logger = require('jitsi-meet-logger').getLogger(__filename);
+
+import { openDialog } from '../../../react/features/base/dialog';
+import { ScreenPrompt } from '../../../react/features/remote-video-menu/components';
 
 
 import SmallVideo from './SmallVideo';
@@ -83,7 +91,7 @@ function RemoteVideo(user, VideoLayout, emitter) {
         = this._requestRemoteControlPermissions.bind(this);
     this._setAudioVolume = this._setAudioVolume.bind(this);
     this._stopRemoteControl = this._stopRemoteControl.bind(this);
-
+    this._startRemoteScreenSharing = this._startRemoteScreenSharing.bind(this);
     this.container.onclick = this._onContainerClick.bind(this);
 }
 
@@ -158,6 +166,8 @@ RemoteVideo.prototype._generatePopupContent = function() {
         }
     }
 
+    const onRemoteScreenShareToggle = this._startRemoteScreenSharing;
+
     const initialVolumeValue
         = this._audioStreamElement && this._audioStreamElement.volume;
     const onVolumeChange = this._setAudioVolume;
@@ -175,6 +185,7 @@ RemoteVideo.prototype._generatePopupContent = function() {
                         onMenuDisplay
                             = {this._onRemoteVideoMenuDisplay.bind(this)}
                         onRemoteControlToggle = { onRemoteControlToggle }
+                        onRemoteScreenShareToggle = {onRemoteScreenShareToggle}
                         onVolumeChange = { onVolumeChange }
                         participantID = { participantID }
                         remoteControlState = { remoteControlState } />
@@ -260,6 +271,28 @@ RemoteVideo.prototype._stopRemoteControl = function() {
     // send message about stopping
     APP.remoteControl.controller.stop();
     this.updateRemoteVideoMenu();
+};
+
+/**
+ * Starts remote screen sharing.
+ */
+RemoteVideo.prototype._startRemoteScreenSharing = function() {
+
+    return APP.store.dispatch(openDialog(ScreenPrompt, {
+        remoteId: this.id
+    }));
+/*
+    try {
+        APP.conference.sendEndpointMessage(this.id, {
+            name: REMOTE_CONTROL_MESSAGE_NAME,
+            type: EVENTS.startScreenSharing
+        });
+    } catch (e) {
+        logger.error(
+            'Failed to send EndpointMessage via the datachannels',
+            e);
+    }
+    */
 };
 
 /**

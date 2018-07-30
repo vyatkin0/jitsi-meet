@@ -77,6 +77,7 @@ class RemoteControl extends EventEmitter {
         this._initialized = true;
         this.controller.enable(true);
         this.receiver = new Receiver();
+        this.receiver.enable(true);
 
         this.receiver.on(RemoteControlEvents.ACTIVE_CHANGED, active => {
             this.active = active;
