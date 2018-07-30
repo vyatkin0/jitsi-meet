@@ -854,6 +854,9 @@ const VideoLayout = {
     resizeVideoArea(
             forceUpdate = false,
             animate = false) {
+        // Resize the thumbnails first.
+        this.resizeThumbnails(forceUpdate);
+
         if (largeVideo) {
             largeVideo.updateContainerSize();
             largeVideo.resize(animate);
@@ -866,9 +869,6 @@ const VideoLayout = {
         if (availableWidth < 0 || availableHeight < 0) {
             return;
         }
-
-        // Resize the thumbnails first.
-        this.resizeThumbnails(forceUpdate);
     },
 
     getSmallVideo(id) {
@@ -960,7 +960,7 @@ const VideoLayout = {
             // FIXME video type is not the same thing as container type
 
             if (id !== currentId && videoType === VIDEO_CONTAINER_TYPE) {
-                eventEmitter.emit(UIEvents.SELECTED_ENDPOINT, id);
+                APP.API.notifyOnStageParticipantChanged(id);
             }
 
             let oldSmallVideo;

@@ -7,8 +7,6 @@ import Recorder from './modules/recorder/Recorder';
 
 import mediaDeviceHelper from './modules/devices/mediaDeviceHelper';
 
-import { reportError } from './modules/util/helpers';
-
 import * as RemoteControlEvents
     from './service/remotecontrol/RemoteControlEvents';
 import UIEvents from './service/UI/UIEvents';
@@ -18,7 +16,6 @@ import * as JitsiMeetConferenceEvents from './ConferenceEvents';
 import {
     createDeviceChangedEvent,
     createScreenSharingEvent,
-    createSelectParticipantFailedEvent,
     createStreamSwitchDelayEvent,
     createTrackMutedEvent,
     sendAnalytics
@@ -75,6 +72,8 @@ import {
     getAvatarURLByParticipantId,
     getLocalParticipant,
     getParticipantById,
+    hiddenParticipantJoined,
+    hiddenParticipantLeft,
     localParticipantConnectionStatusChanged,
     localParticipantRoleChanged,
     MAX_DISPLAY_NAME_LENGTH,
@@ -1664,10 +1663,13 @@ export default {
         room.on(JitsiConferenceEvents.PARTCIPANT_FEATURES_CHANGED,
             user => APP.UI.onUserFeaturesChanged(user));
         room.on(JitsiConferenceEvents.USER_JOINED, (id, user) => {
+            const displayName = user.getDisplayName();
+
             if (user.isHidden()) {
+                APP.store.dispatch(hiddenParticipantJoined(id, displayName));
+
                 return;
             }
-            const displayName = user.getDisplayName();
 
             APP.store.dispatch(participantJoined({
                 botType: user.getBotType(),
@@ -1692,8 +1694,11 @@ export default {
 
         room.on(JitsiConferenceEvents.USER_LEFT, (id, user) => {
             if (user.isHidden()) {
+                APP.store.dispatch(hiddenParticipantLeft(id));
+
                 return;
             }
+
             APP.store.dispatch(participantLeft(id, room));
             logger.log('USER %s LEFT', id, user);
             APP.API.notifyUserLeft(id);
@@ -1820,24 +1825,6 @@ export default {
                     room.sendTextMessage(message);
                 });
             }
-
-            APP.UI.addListener(UIEvents.SELECTED_ENDPOINT, id => {
-                APP.API.notifyOnStageParticipantChanged(id);
-                try {
-                    // do not try to select participant if there is none (we
-                    // are alone in the room), otherwise an error will be
-                    // thrown cause reporting mechanism is not available
-                    // (datachannels currently)
-                    if (room.getParticipants().length === 0) {
-                        return;
-                    }
-
-                    room.selectParticipant(id);
-                } catch (e) {
-                    sendAnalytics(createSelectParticipantFailedEvent(e));
-                    reportError(e);
-                }
-            });
         }
 
         room.on(JitsiConferenceEvents.CONNECTION_INTERRUPTED, () => {
