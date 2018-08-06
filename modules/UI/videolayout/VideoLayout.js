@@ -1107,10 +1107,9 @@ const VideoLayout = {
     },
 
     /**
-     * Sets the remote control properties (checks whether remote control
-     * is supported and executes remoteVideo.setRemoteControlSupport).
+     * Sets the remote screen sharing properties.
      * @param {JitsiParticipant} user the user that will be checked for remote
-     * control support.
+     * screen sharing support.
      * @param {RemoteVideo} remoteVideo the remoteVideo on which the properties
      * will be set.
      */

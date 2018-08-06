@@ -63,7 +63,7 @@ class ScreenPrompt extends Component {
             <Dialog
                 onCancel = { this._onCancel }
                 onSubmit = { this._onSubmit }
-                titleKey = 'Screen id '
+                titleString = 'Screen id '
                 width = 'small'>
                 <TextField
                     autoFocus = { true }

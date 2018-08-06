@@ -51,19 +51,6 @@ export function toggleRemoteScreenSharing(remoteId, screenId) {
 }
 
 /**
- * Checks whether the passed user supports remote control or not.
- *
- * @param {JitsiParticipant} user - The user to be tested.
- * @returns {Promise<boolean>} The promise will be resolved with true if
- * the user supports remote control and with false if not.
- */
-export function checkUserRemoteScreenSharingSupport(user: Object) {
-    return user.getFeatures().then(
-        features => features.has(DISCO_REMOTE_SCREEN_SHARING_FEATURE),
-        () => false);
-}
-
-/**
  * Implements the remote control functionality.
  */
 class RemoteScreenSharing extends EventEmitter {
@@ -123,6 +110,19 @@ class RemoteScreenSharing extends EventEmitter {
         APP.conference.removeConferenceListener(
             JitsiConferenceEvents.ENDPOINT_MESSAGE_RECEIVED,
             this._remoteScreenSharingEventsListener);
+    }
+
+    /**
+     * Checks whether the passed user supports remote screen sharing or not.
+     *
+     * @param {JitsiParticipant} user - The user to be tested.
+     * @returns {Promise<boolean>} The promise will be resolved with true if
+     * the user supports remote control and with false if not.
+     */
+    checkUserRemoteScreenSharingSupport(user: Object) {
+        return user.getFeatures().then(
+            features => features.has(DISCO_REMOTE_SCREEN_SHARING_FEATURE),
+            () => false);
     }
 
     /**

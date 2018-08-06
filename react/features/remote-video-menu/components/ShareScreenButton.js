@@ -66,12 +66,18 @@ class ShareScreenButton extends Component {
      * @returns {ReactElement}
      */
     render() {
-        const { participantID, t } = this.props;
+        const { participantID, 
+            t } = this.props;
+
+        const classNames = 'icon-share-desktop';
+        //const classNames = `icon-share-desktop ${
+        //   _screensharing ? 'toggled' : ''} ${
+        //    _desktopSharingEnabled ? '' : 'disabled'}`;
 
         return (
             <RemoteVideoMenuButton
                 buttonText = 'Share screen'
-                iconClass = 'icon-kick'
+                iconClass = {classNames}
                 id = { `ejectlink_${participantID}` }
                 onClick = { this._onClick } />
         );

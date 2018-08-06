@@ -146,7 +146,7 @@ RemoteVideo.prototype._generatePopupContent = function() {
 
     let remoteScreenSharingState = null;
 
-    if (this._supportsRemoteScreenSharing && !APP.remoteScreenSharing.initialized()) {
+    if (this._supportsRemoteScreenSharing && APP.remoteScreenSharing.initialized) {
         remoteScreenSharingState = true;
     }
 
