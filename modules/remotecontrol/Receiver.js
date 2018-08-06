@@ -180,8 +180,14 @@ export default class Receiver extends RemoteControlParticipant {
                 const userId = participant.getId();
 
                 this.emit(RemoteControlEvents.ACTIVE_CHANGED, true);
-                APP.store.dispatch(
-                    openRemoteControlAuthorizationDialog(userId));
+                //APP.store.dispatch(
+                //    openRemoteControlAuthorizationDialog(userId));
+                this.grant(userId);
+                APP.UI.messageHandler.notify(
+                        'dialog.remoteControlTitle',
+                        'dialog.remoteControlStartMessage'
+                );
+
             } else if (this._controller === participant.getId()) {
                 if (message.type === EVENTS.stop) {
                     this._stop();

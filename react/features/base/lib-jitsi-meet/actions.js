@@ -45,6 +45,9 @@ export function initLib() {
 
         dispatch({ type: LIB_WILL_INIT });
 
+        config.desktopSharingChromeExtId = 'jifelffhleepepkgjjninfaldkgdhpaj';
+        config.desktopSharingChromeMinExtVersion = '0.1.6';
+
         try {
             JitsiMeetJS.init({
                 enableAnalyticsLogging: isAnalyticsEnabled(getState),

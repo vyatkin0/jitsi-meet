@@ -6,15 +6,23 @@
 // things are broken there (not only the icon).
 import './react/features/base/react/prop-types-polyfill.js';
 
-import 'jquery';
+import $ from 'jquery';
 import 'jquery-contextmenu';
 import 'jQuery-Impromptu';
+
+//const $ = require('jquery');
+
+window.jQuery = $;
+window.$ = $;
+
 import 'autosize';
 
 import conference from './conference';
 import API from './modules/API';
 import keyboardshortcut from './modules/keyboardshortcut/keyboardshortcut';
 import remoteControl from './modules/remotecontrol/RemoteControl';
+import remoteScreenSharing
+    from './modules/remotescreensharing/RemoteScreenSharing';
 import translation from './modules/translation/translation';
 import UI from './modules/UI/UI';
 
@@ -40,6 +48,7 @@ window.APP = {
 
     keyboardshortcut,
     remoteControl,
+    remoteScreenSharing,
     translation,
     UI
 };

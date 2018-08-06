@@ -28,7 +28,8 @@ const commands = {
     toggleChat: 'toggle-chat',
     toggleFilmStrip: 'toggle-film-strip',
     toggleShareScreen: 'toggle-share-screen',
-    toggleVideo: 'toggle-video'
+    toggleVideo: 'toggle-video',
+    getScreens: 'get-screens'
 };
 
 /**
@@ -551,6 +552,30 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
 
             return;
         }
+
+        if (commands[name] === 'get-screens') {
+            if (args[0]) {
+                const electron = window.require('electron');
+
+                const options = { types: [ 'screen' ] };
+
+                electron.desktopCapturer.getSources(options,
+                    (error, sources) => {
+                        if (error) {
+                            return;
+                        }
+
+                        for (let i = 0; i < sources.length; ++i) {
+                            args[0]({ id: sources[i].id,
+                                name: sources[i].name,
+                                img: sources[i].thumbnail.toPNG().toString('base64') });
+                        }
+                    });
+            }
+
+            return;
+        }
+
         this._transport.sendEvent({
             data: args,
             name: commands[name]

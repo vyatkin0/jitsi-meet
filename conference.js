@@ -719,6 +719,7 @@ export default {
 
                 this._createRoom(tracks);
                 APP.remoteControl.init();
+                APP.remoteScreenSharing.init();
 
                 // if user didn't give access to mic or camera or doesn't have
                 // them at all, we mark corresponding toolbar buttons as muted,
@@ -1407,7 +1408,7 @@ export default {
      * 'window', etc.).
      * @return {Promise.<T>}
      */
-    toggleScreenSharing(toggle = !this._untoggleScreenSharing, options = {}) {
+    toggleScreenSharing(screen, toggle = !this._untoggleScreenSharing, options = {}) {
         if (this.videoSwitchInProgress) {
             return Promise.reject('Switch in progress.');
         }
@@ -1418,6 +1419,12 @@ export default {
 
         if (this.isAudioOnly()) {
             return Promise.reject('No screensharing in audio only mode');
+        }
+
+        if (screen) {
+            window.JitsiMeetScreenObtainer.openDesktopPicker = (opt, onSourceChoose) => onSourceChoose("screen:" + screen, "screen");
+        } else {
+            window.JitsiMeetScreenObtainer.openDesktopPicker = (opt, onSourceChoose) => APP.store.dispatch(showDesktopPicker(opt, onSourceChoose));
         }
 
         if (toggle) {
@@ -2480,6 +2487,8 @@ export default {
     hangup(requestFeedback = false) {
         eventEmitter.emit(JitsiMeetConferenceEvents.BEFORE_HANGUP);
         APP.UI.removeLocalMedia();
+
+        APP.remoteScreenSharing.close();
 
         // Remove unnecessary event listeners from firing callbacks.
         if (this.deviceChangeListener) {

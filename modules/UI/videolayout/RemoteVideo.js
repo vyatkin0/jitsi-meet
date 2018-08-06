@@ -24,6 +24,9 @@ import {
 
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
+import { openDialog } from '../../../react/features/base/dialog';
+import { ScreenPrompt }
+    from '../../../react/features/remote-video-menu/components';
 
 import SmallVideo from './SmallVideo';
 import UIUtils from '../util/UIUtil';
@@ -45,6 +48,7 @@ function RemoteVideo(user, VideoLayout, emitter) {
     SmallVideo.call(this, VideoLayout);
     this._audioStreamElement = null;
     this._supportsRemoteControl = false;
+    this._supportsRemoteScreenSharing = false;
     this.statsPopoverLocation = interfaceConfig.VERTICAL_FILMSTRIP
         ? 'left bottom' : 'top center';
     this.addRemoteVideoContainer();
@@ -83,7 +87,7 @@ function RemoteVideo(user, VideoLayout, emitter) {
         = this._requestRemoteControlPermissions.bind(this);
     this._setAudioVolume = this._setAudioVolume.bind(this);
     this._stopRemoteControl = this._stopRemoteControl.bind(this);
-
+    this._startRemoteScreenSharing = this._startRemoteScreenSharing.bind(this);
     this.container.onclick = this._onContainerClick.bind(this);
 }
 
@@ -140,6 +144,12 @@ RemoteVideo.prototype._generatePopupContent = function() {
         return;
     }
 
+    let remoteScreenSharingState = null;
+
+    if (this._supportsRemoteScreenSharing && !APP.remoteScreenSharing.initialized()) {
+        remoteScreenSharingState = true;
+    }
+
     const { controller } = APP.remoteControl;
     let remoteControlState = null;
     let onRemoteControlToggle;
@@ -158,6 +168,8 @@ RemoteVideo.prototype._generatePopupContent = function() {
         }
     }
 
+    const onRemoteScreenShareToggle = this._startRemoteScreenSharing;
+
     const initialVolumeValue
         = this._audioStreamElement && this._audioStreamElement.volume;
     const onVolumeChange = this._setAudioVolume;
@@ -175,9 +187,12 @@ RemoteVideo.prototype._generatePopupContent = function() {
                         onMenuDisplay
                             = {this._onRemoteVideoMenuDisplay.bind(this)}
                         onRemoteControlToggle = { onRemoteControlToggle }
+                        onRemoteScreenShareToggle = {onRemoteScreenShareToggle}
                         onVolumeChange = { onVolumeChange }
                         participantID = { participantID }
-                        remoteControlState = { remoteControlState } />
+                        remoteControlState = { remoteControlState }
+                        remoteScreenSharingState = {remoteScreenSharingState}
+                    />
                 </AtlasKitThemeProvider>
             </I18nextProvider>
         </Provider>,
@@ -211,6 +226,22 @@ RemoteVideo.prototype.setRemoteControlSupport = function(isSupported = false) {
     this._supportsRemoteControl = isSupported;
     this.updateRemoteVideoMenu();
 };
+
+/**
+ * Sets the remote screen sharing supported value and initializes
+ * or updates the menu depending on the remote screen sharing
+ * is supported or not.
+ * @param {boolean} isSupported
+ */
+RemoteVideo.prototype.setRemoteScreenSharingSupport
+    = function(isSupported = false) {
+        if (this._supportsRemoteScreenSharing === isSupported) {
+            return;
+        }
+        this._supportsRemoteScreenSharing = isSupported;
+        this.updateRemoteVideoMenu();
+    };
+
 
 /**
  * Requests permissions for remote control session.
@@ -260,6 +291,15 @@ RemoteVideo.prototype._stopRemoteControl = function() {
     // send message about stopping
     APP.remoteControl.controller.stop();
     this.updateRemoteVideoMenu();
+};
+
+/**
+ * Starts remote screen sharing.
+ */
+RemoteVideo.prototype._startRemoteScreenSharing = function() {
+    return APP.store.dispatch(openDialog(ScreenPrompt, {
+        remoteId: this.id
+    }));
 };
 
 /**

@@ -28,6 +28,8 @@ let commands = {};
  */
 let initialScreenSharingState = false;
 
+let initialSharedScreen = null;
+
 /**
  * The transport instance used for communication with external apps.
  *
@@ -82,9 +84,9 @@ function initCommands() {
             sendAnalytics(createApiEvent('chat.toggled'));
             APP.UI.toggleChat();
         },
-        'toggle-share-screen': () => {
+        'toggle-share-screen': screen => {
             sendAnalytics(createApiEvent('screen.sharing.toggled'));
-            toggleScreenSharing();
+            toggleScreenSharing(screen);
         },
         'video-hangup': () => {
             sendAnalytics(createApiEvent('video.hangup'));
@@ -162,7 +164,7 @@ function initCommands() {
  */
 function onDesktopSharingEnabledChanged(enabled = false) {
     if (enabled && initialScreenSharingState) {
-        toggleScreenSharing();
+        toggleScreenSharing(initialSharedScreen);
     }
 }
 
@@ -186,15 +188,17 @@ function shouldBeEnabled() {
 /**
  * Executes on toggle-share-screen command.
  *
+ * @param {Object} screen - Optional screen id.
  * @returns {void}
  */
-function toggleScreenSharing() {
+function toggleScreenSharing(screen) {
     if (APP.conference.isDesktopSharingEnabled) {
 
         // eslint-disable-next-line no-empty-function
-        APP.conference.toggleScreenSharing().catch(() => {});
+        APP.conference.toggleScreenSharing(screen).catch(() => {});
     } else {
         initialScreenSharingState = !initialScreenSharingState;
+        initialSharedScreen = screen;
     }
 }
 
