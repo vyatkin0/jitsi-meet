@@ -111,6 +111,8 @@ import { setSharedVideoStatus } from './react/features/shared-video';
 import { isButtonEnabled } from './react/features/toolbox';
 import { endpointMessageReceived } from './react/features/subtitles';
 
+import {DISCO_REMOTE_SCREEN_SHARED_FEATURE} from './modules/remotescreensharing/RemoteScreenSharing';
+
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 const eventEmitter = new EventEmitter();
@@ -1427,9 +1429,13 @@ export default {
             window.JitsiMeetScreenObtainer.openDesktopPicker = (opt, onSourceChoose) => APP.store.dispatch(showDesktopPicker(opt, onSourceChoose));
         }
 
-        if (toggle) {
+        if (toggle) { 
+            APP.connection.addFeature(DISCO_REMOTE_SCREEN_SHARED_FEATURE, false);
+
             return this._switchToScreenSharing(options);
         }
+
+        APP.connection.removeFeature(DISCO_REMOTE_SCREEN_SHARED_FEATURE, false);
 
         return this._untoggleScreenSharing();
     },

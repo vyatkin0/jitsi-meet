@@ -41,6 +41,11 @@ class ShareScreenButton extends Component {
         participantID: PropTypes.string,
 
         /**
+         * Screen is already shared
+         */
+        isShared: PropTypes.bool,
+
+        /**
          * Invoked to obtain translated strings.
          */
         t: PropTypes.func
@@ -66,17 +71,20 @@ class ShareScreenButton extends Component {
      * @returns {ReactElement}
      */
     render() {
-        const { participantID, 
+        const { participantID,
+            isShared,
             t } = this.props;
+ 
+        const classNames = `icon-share-desktop ${ isShared ? 'toggled' : ''}`;
 
-        const classNames = 'icon-share-desktop';
         //const classNames = `icon-share-desktop ${
         //   _screensharing ? 'toggled' : ''} ${
         //    _desktopSharingEnabled ? '' : 'disabled'}`;
 
+        const text = isShared ? 'Stop share screen' : 'Share screen';
         return (
             <RemoteVideoMenuButton
-                buttonText = 'Share screen'
+                buttonText = {text}
                 iconClass = {classNames}
                 id = { `ejectlink_${participantID}` }
                 onClick = { this._onClick } />

@@ -10,8 +10,12 @@ import {
 /**
  * The value for the "var" attribute of feature tag in disco-info packets.
  */
-export const DISCO_REMOTE_SCREEN_SHARING_FEATURE
+const DISCO_REMOTE_SCREEN_SHARING_FEATURE
     = 'http://jitsi.org/meet/remotescreensharing';
+
+export const DISCO_REMOTE_SCREEN_SHARED_FEATURE
+    = 'http://jitsi.org/meet/remotescreenshared';
+
 export const EVENTS = {
     startScreenSharing: 'startScreenSharing'
 };
@@ -90,7 +94,7 @@ class RemoteScreenSharing extends EventEmitter {
         this._initialized = true;
 
         // Announce remote screen sharing support.
-        APP.connection.addFeature(DISCO_REMOTE_SCREEN_SHARING_FEATURE, true);
+        APP.connection.addFeature(DISCO_REMOTE_SCREEN_SHARING_FEATURE, false);
 
         APP.conference.addConferenceListener(
             JitsiConferenceEvents.ENDPOINT_MESSAGE_RECEIVED,
@@ -121,7 +125,7 @@ class RemoteScreenSharing extends EventEmitter {
      */
     checkUserRemoteScreenSharingSupport(user: Object) {
         return user.getFeatures().then(
-            features => features.has(DISCO_REMOTE_SCREEN_SHARING_FEATURE),
+            features => ({sharing:features.has(DISCO_REMOTE_SCREEN_SHARING_FEATURE), shared: features.has(DISCO_REMOTE_SCREEN_SHARED_FEATURE)}),
             () => false);
     }
 

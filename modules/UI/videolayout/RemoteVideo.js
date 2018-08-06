@@ -48,7 +48,7 @@ function RemoteVideo(user, VideoLayout, emitter) {
     SmallVideo.call(this, VideoLayout);
     this._audioStreamElement = null;
     this._supportsRemoteControl = false;
-    this._supportsRemoteScreenSharing = false;
+    this._supportsRemoteScreenSharing = {sharing:false, shared:false};
     this.statsPopoverLocation = interfaceConfig.VERTICAL_FILMSTRIP
         ? 'left bottom' : 'top center';
     this.addRemoteVideoContainer();
@@ -144,10 +144,10 @@ RemoteVideo.prototype._generatePopupContent = function() {
         return;
     }
 
-    let remoteScreenSharingState = null;
+    let remoteScreenSharingState = {sharing:false, shared:false};
 
-    if (this._supportsRemoteScreenSharing && APP.remoteScreenSharing.initialized) {
-        remoteScreenSharingState = true;
+    if (APP.remoteScreenSharing.initialized) {
+        remoteScreenSharingState = this._supportsRemoteScreenSharing;
     }
 
     const { controller } = APP.remoteControl;
@@ -234,11 +234,12 @@ RemoteVideo.prototype.setRemoteControlSupport = function(isSupported = false) {
  * @param {boolean} isSupported
  */
 RemoteVideo.prototype.setRemoteScreenSharingSupport
-    = function(isSupported = false) {
-        if (this._supportsRemoteScreenSharing === isSupported) {
+    = function(isSupported = {sharing:false, shared:false}) {
+        if (this._supportsRemoteScreenSharing.sharing === isSupported.sharing &&
+            this._supportsRemoteScreenSharing.shared === isSupported.shared) {
             return;
         }
-        this._supportsRemoteScreenSharing = isSupported;
+        this._supportsRemoteScreenSharing = {...isSupported};
         this.updateRemoteVideoMenu();
     };
 
