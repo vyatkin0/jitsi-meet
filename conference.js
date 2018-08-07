@@ -1357,6 +1357,8 @@ export default {
             receiver.stop();
         }
 
+        APP.connection.removeFeature(DISCO_REMOTE_SCREEN_SHARED_FEATURE, true);
+
         let promise = null;
 
         if (didHaveVideo) {
@@ -1364,8 +1366,8 @@ export default {
                 .then(([ stream ]) => this.useVideoStream(stream))
                 .then(() => {
                     sendAnalytics(createScreenSharingEvent('stopped'));
-                    logger.log('Screen sharing stopped, switching to video.');
-
+                    logger.log('Screen sharing stopped, switching to video.')
+                    
                     if (!this.localVideo && wasVideoMuted) {
                         return Promise.reject('No local video to be muted!');
                     } else if (wasVideoMuted && this.localVideo) {
@@ -1430,12 +1432,8 @@ export default {
         }
 
         if (toggle) { 
-            APP.connection.addFeature(DISCO_REMOTE_SCREEN_SHARED_FEATURE, false);
-
             return this._switchToScreenSharing(options);
         }
-
-        APP.connection.removeFeature(DISCO_REMOTE_SCREEN_SHARED_FEATURE, false);
 
         return this._untoggleScreenSharing();
     },
@@ -1553,6 +1551,8 @@ export default {
                 this.videoSwitchInProgress = false;
                 sendAnalytics(createScreenSharingEvent('started'));
                 logger.log('Screen sharing started');
+
+                APP.connection.addFeature(DISCO_REMOTE_SCREEN_SHARED_FEATURE, true);
             })
             .catch(error => {
                 this.videoSwitchInProgress = false;

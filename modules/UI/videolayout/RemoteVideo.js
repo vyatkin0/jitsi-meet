@@ -28,6 +28,9 @@ import { openDialog } from '../../../react/features/base/dialog';
 import { ScreenPrompt }
     from '../../../react/features/remote-video-menu/components';
 
+import { toggleRemoteScreenSharing }
+    from '../../remotescreensharing/RemoteScreenSharing';
+
 import SmallVideo from './SmallVideo';
 import UIUtils from '../util/UIUtil';
 
@@ -298,9 +301,14 @@ RemoteVideo.prototype._stopRemoteControl = function() {
  * Starts remote screen sharing.
  */
 RemoteVideo.prototype._startRemoteScreenSharing = function() {
-    return APP.store.dispatch(openDialog(ScreenPrompt, {
-        remoteId: this.id
-    }));
+    if(this._supportsRemoteScreenSharing && this._supportsRemoteScreenSharing.shared) {
+        toggleRemoteScreenSharing(this.id);
+    }
+    else {
+        return APP.store.dispatch(openDialog(ScreenPrompt, {
+            remoteId: this.id
+        }));
+    }
 };
 
 /**

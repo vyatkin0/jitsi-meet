@@ -75,13 +75,13 @@ class ShareScreenButton extends Component {
             isShared,
             t } = this.props;
  
-        const classNames = `icon-share-desktop ${ isShared ? 'toggled' : ''}`;
+        const classNames = isShared ? 'fa fa-stop' : 'icon-share-desktop';
 
         //const classNames = `icon-share-desktop ${
         //   _screensharing ? 'toggled' : ''} ${
         //    _desktopSharingEnabled ? '' : 'disabled'}`;
 
-        const text = isShared ? 'Stop share screen' : 'Share screen';
+        const text = isShared ? 'Stop screen sharing' : 'Share screen';
         return (
             <RemoteVideoMenuButton
                 buttonText = {text}

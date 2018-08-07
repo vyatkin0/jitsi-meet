@@ -74,7 +74,7 @@
     "redux": "4.0.0",
     "redux-thunk": "2.2.0",
     "styled-components": "1.4.6",
-    "url-polyfill": "github:github/url-polyfill#39734186de44612bc5a16eb25f5407adcc5b2e7c",
+    "url-polyfill": "^1.0.13",
     "uuid": "3.1.0",
     "xmldom": "0.1.27"
   },
@@ -115,8 +115,7 @@
     "lint": "eslint . && flow",
     "validate": "npm ls"
   },
-  "pre-commit": [
-  ],
+  "pre-commit": [],
   "browser": {
     "autosize": "./node_modules/autosize/build/jquery.autosize.js",
     "jQuery-Impromptu": "jQuery-Impromptu/src/jquery-impromptu.js"
