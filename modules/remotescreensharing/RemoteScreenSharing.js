@@ -22,7 +22,7 @@ export const EVENTS = {
 
 
 /**
- * The type of remote control messages.
+ * The type of remote screen sharing messages.
  */
 const REMOTE_SCREEN_SHARING_MESSAGE_NAME = 'remote-screen-sharing';
 
@@ -31,13 +31,10 @@ const logger = getLogger(__filename);
 declare var APP: Object;
 
 /**
- * Listens for data channel EndpointMessage. Handles only remote screen sharing
- * messages.
+ * Send a message to remote participant to toggle screen sharing.
  * 
- * @param {JitsiParticipant} participant - The controller participant.
- * @param {Object} message - EndpointMessage from the data channels.
- * @param {string} message.name - The function processes only messages with
- * name REMOTE_SCREEN_SHARING_MESSAGE_NAME.
+ * @param {string} remoteId - Id of a remote participant.
+ * @param {string} screenId - Id of screen to share. If false user will be prompted to select a screen
  * @returns {void}
  */
 export function toggleRemoteScreenSharing(remoteId, screenId) {
@@ -55,13 +52,13 @@ export function toggleRemoteScreenSharing(remoteId, screenId) {
 }
 
 /**
- * Implements the remote control functionality.
+ * Implements the remote screen sharing functionality.
  */
 class RemoteScreenSharing extends EventEmitter {
     _initialized: boolean;
 
     /**
-     * Constructs new instance. Creates controller and receiver properties.
+     * Constructs new instance.
      */
     constructor() {
         super();
@@ -79,8 +76,7 @@ class RemoteScreenSharing extends EventEmitter {
     }
 
     /**
-     * Initializes the remote control - checks if the remote control should be
-     * enabled or not.
+     * Initializes the remote screen sharing
      *
      * @returns {void}
      */

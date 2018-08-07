@@ -1,20 +1,16 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
 
 import {
     createRemoteVideoMenuButtonEvent,
     sendAnalytics
 } from '../../analytics';
 import { translate } from '../../base/i18n';
-import { kickParticipant } from '../../base/participants';
-
 import RemoteVideoMenuButton from './RemoteVideoMenuButton';
 
 /**
- * Implements a React {@link Component} which displays a button for kicking out
- * a participant from the conference.
- *
+ * Implements a React {@link Component} which displays a button for toggle remote screen sharing 
+ * 
  * @extends Component
  */
 class ShareScreenButton extends Component {
@@ -24,11 +20,6 @@ class ShareScreenButton extends Component {
      * @static
      */
     static propTypes = {
-        /**
-         * Invoked to signal the participant with the passed in participantID
-         * should be removed from the conference.
-         */
-        dispatch: PropTypes.func,
 
         /**
          * Callback to invoke when {@code ShareScreenButton} is clicked.
@@ -44,15 +35,10 @@ class ShareScreenButton extends Component {
          * Screen is already shared
          */
         isShared: PropTypes.bool,
-
-        /**
-         * Invoked to obtain translated strings.
-         */
-        t: PropTypes.func
     };
 
     /**
-     * Initializes a new {@code KickButton} instance.
+     * Initializes a new {@code ShareScreenButton} instance.
      *
      * @param {Object} props - The read-only React Component props with which
      * the new instance is to be initialized.
@@ -72,8 +58,7 @@ class ShareScreenButton extends Component {
      */
     render() {
         const { participantID,
-            isShared,
-            t } = this.props;
+            isShared } = this.props;
  
         const classNames = isShared ? 'fa fa-stop' : 'icon-share-desktop';
 
@@ -98,7 +83,7 @@ class ShareScreenButton extends Component {
      * @returns {void}
      */
     _onClick() {
-        const { dispatch, onClick, participantID } = this.props;
+        const { onClick, participantID } = this.props;
 
         sendAnalytics(createRemoteVideoMenuButtonEvent(
             'sharescreen.button',

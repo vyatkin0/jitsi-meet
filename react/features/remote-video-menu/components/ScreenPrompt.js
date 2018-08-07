@@ -11,7 +11,7 @@ import { toggleRemoteScreenSharing }
 
 /**
  * Implements a React {@code Component} for displaying a dialog with an field
- * for setting the local participant's display name.
+ * for setting shared display id.
  *
  * @extends Component
  */
@@ -29,7 +29,7 @@ class ScreenPrompt extends Component {
     };
 
     /**
-     * Initializes a new {@code DisplayNamePrompt} instance.
+     * Initializes a new {@code ScreenPrompt} instance.
      *
      * @param {Object} props - The read-only properties with which the new
      * instance is to be initialized.
@@ -78,7 +78,7 @@ class ScreenPrompt extends Component {
     }
 
     /**
-     * Updates the entered display name.
+     * Updates the entered display id.
      *
      * @param {Object} event - The DOM event triggered from the entered display
      * name value having changed.
@@ -102,7 +102,7 @@ class ScreenPrompt extends Component {
     }
 
     /**
-     * Sends 'start/stop screen sharing' to remote participant.
+     * Sends 'start screen sharing' to remote participant.
      *
      * @private
      * @returns {void}
