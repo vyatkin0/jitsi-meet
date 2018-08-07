@@ -110,6 +110,8 @@ import { setSharedVideoStatus } from './react/features/shared-video';
 import { isButtonEnabled } from './react/features/toolbox';
 import { endpointMessageReceived } from './react/features/subtitles';
 
+import {DISCO_REMOTE_SCREEN_SHARED_FEATURE} from './modules/remotescreensharing/RemoteScreenSharing';
+
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 const eventEmitter = new EventEmitter();
@@ -718,6 +720,7 @@ export default {
 
                 this._createRoom(tracks);
                 APP.remoteControl.init();
+                APP.remoteScreenSharing.init();
 
                 // if user didn't give access to mic or camera or doesn't have
                 // them at all, we mark corresponding toolbar buttons as muted,
@@ -1353,6 +1356,8 @@ export default {
             receiver.stop();
         }
 
+        APP.connection.removeFeature(DISCO_REMOTE_SCREEN_SHARED_FEATURE, true);
+
         let promise = null;
 
         if (didHaveVideo) {
@@ -1360,8 +1365,8 @@ export default {
                 .then(([ stream ]) => this.useVideoStream(stream))
                 .then(() => {
                     sendAnalytics(createScreenSharingEvent('stopped'));
-                    logger.log('Screen sharing stopped, switching to video.');
-
+                    logger.log('Screen sharing stopped, switching to video.')
+                    
                     if (!this.localVideo && wasVideoMuted) {
                         return Promise.reject('No local video to be muted!');
                     } else if (wasVideoMuted && this.localVideo) {
@@ -1372,7 +1377,6 @@ export default {
                     logger.error('failed to switch back to local video', error);
 
                     return this.useVideoStream(null).then(() =>
-
                         // Still fail with the original err
                         Promise.reject(error)
                     );
@@ -1421,12 +1425,11 @@ export default {
 
         if (screen) {
             window.JitsiMeetScreenObtainer.openDesktopPicker = (opt, onSourceChoose) => onSourceChoose("screen:" + screen, "screen");
-        }
-        else {
+        } else {
             window.JitsiMeetScreenObtainer.openDesktopPicker = (opt, onSourceChoose) => APP.store.dispatch(showDesktopPicker(opt, onSourceChoose));
         }
 
-        if (toggle) {
+        if (toggle) { 
             return this._switchToScreenSharing(options);
         }
 
@@ -1546,6 +1549,8 @@ export default {
                 this.videoSwitchInProgress = false;
                 sendAnalytics(createScreenSharingEvent('started'));
                 logger.log('Screen sharing started');
+
+                APP.connection.addFeature(DISCO_REMOTE_SCREEN_SHARED_FEATURE, true);
             })
             .catch(error => {
                 this.videoSwitchInProgress = false;
@@ -2474,6 +2479,8 @@ export default {
     hangup(requestFeedback = false) {
         eventEmitter.emit(JitsiMeetConferenceEvents.BEFORE_HANGUP);
         APP.UI.removeLocalMedia();
+
+        APP.remoteScreenSharing.close();
 
         // Remove unnecessary event listeners from firing callbacks.
         if (this.deviceChangeListener) {

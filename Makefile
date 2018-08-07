@@ -10,6 +10,8 @@ STYLES_DESTINATION = css/all.css
 STYLES_MAIN = css/main.scss
 WEBPACK = webpack
 WEBPACK_DEV_SERVER = webpack-dev-server
+#WEBPACK = ./node_modules/.bin/webpack
+#WEBPACK_DEV_SERVER = ./node_modules/.bin/webpack-dev-server
 
 all: compile deploy clean
 
@@ -44,6 +46,8 @@ deploy-appbundle:
 
 deploy-lib-jitsi-meet:
 	cp \
+		$(BUILD_DIR)/external_api.js \
+		$(BUILD_DIR)/external_api.js.map \
 		$(LIBJITSIMEET_DIR)/lib-jitsi-meet.min.js \
 		$(LIBJITSIMEET_DIR)/lib-jitsi-meet.min.map \
 		$(LIBJITSIMEET_DIR)/connection_optimization/external_connect.js \

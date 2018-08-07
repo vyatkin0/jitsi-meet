@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { FieldTextStateless as TextField } from '@atlaskit/field-text';
@@ -5,28 +6,30 @@ import { Dialog } from '../../base/dialog';
 
 import { translate } from '../../base/i18n';
 
-import {
-    EVENTS,
-    REMOTE_CONTROL_MESSAGE_NAME
-} from '../../../../service/remotecontrol/Constants';
-
-const logger = require('jitsi-meet-logger').getLogger(__filename);
+import { toggleRemoteScreenSharing }
+    from '../../../../modules/remotescreensharing/RemoteScreenSharing';
 
 /**
  * Implements a React {@code Component} for displaying a dialog with an field
- * for setting the local participant's display name.
+ * for setting shared display id.
  *
  * @extends Component
  */
 class ScreenPrompt extends Component {
     /**
-     * {@code DisplayNamePrompt} component's property types.
+     * {@code ScreenPrompt} component's property types.
      *
      * @static
      */
+    static propTypes = {
+        /**
+         * The ID of the remote participant.
+         */
+        remoteId: PropTypes.string
+    };
 
     /**
-     * Initializes a new {@code DisplayNamePrompt} instance.
+     * Initializes a new {@code ScreenPrompt} instance.
      *
      * @param {Object} props - The read-only properties with which the new
      * instance is to be initialized.
@@ -58,10 +61,9 @@ class ScreenPrompt extends Component {
     render() {
         return (
             <Dialog
-                isModal = { false }
                 onCancel = { this._onCancel }
                 onSubmit = { this._onSubmit }
-                titleKey = 'Screen id '
+                titleString = 'Screen id '
                 width = 'small'>
                 <TextField
                     autoFocus = { true }
@@ -76,7 +78,7 @@ class ScreenPrompt extends Component {
     }
 
     /**
-     * Updates the entered display name.
+     * Updates the entered display id.
      *
      * @param {Object} event - The DOM event triggered from the entered display
      * name value having changed.
@@ -90,9 +92,7 @@ class ScreenPrompt extends Component {
     }
 
     /**
-     * Dispatches an action notifying feedback was not submitted. The submitted
-     * score will have one added as the rest of the app does not expect 0
-     * indexing.
+     * Closes the dialog.
      *
      * @private
      * @returns {boolean} Returns true to close the dialog.
@@ -101,10 +101,8 @@ class ScreenPrompt extends Component {
         return true;
     }
 
-
     /**
-     * Dispatches an action to update the local participant's display name. A
-     * name must be entered for the action to dispatch.
+     * Sends 'start screen sharing' to remote participant.
      *
      * @private
      * @returns {void}
@@ -112,21 +110,7 @@ class ScreenPrompt extends Component {
     _onSubmit() {
         const { screenId } = this.state;
 
-        //if (!screenId.trim()) {
-        //    return false;
-        //}
-
-        try {
-            APP.conference.sendEndpointMessage(this.props.remoteId, {
-                name: REMOTE_CONTROL_MESSAGE_NAME,
-                type: EVENTS.startScreenSharing,
-                screen_id: screenId
-            });
-        } catch (e) {
-            logger.error(
-                'Failed to send EndpointMessage via the datachannels',
-                e);
-        }
+        toggleRemoteScreenSharing(this.props.remoteId, screenId);
 
         return true;
     }

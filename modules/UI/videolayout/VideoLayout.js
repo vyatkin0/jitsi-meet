@@ -464,6 +464,8 @@ const VideoLayout = {
             = new RemoteVideo(jitsiParticipant, VideoLayout, eventEmitter);
 
         this._setRemoteControlProperties(jitsiParticipant, remoteVideo);
+        this._setRemoteScreenSharingProperties(jitsiParticipant, remoteVideo);
+
         this.addRemoteVideoContainer(id, remoteVideo);
 
         this.updateMutedForNoTracks(id, 'audio');
@@ -1088,6 +1090,7 @@ const VideoLayout = {
             return;
         }
         this._setRemoteControlProperties(user, video);
+        this._setRemoteScreenSharingProperties(user, video);
     },
 
     /**
@@ -1101,6 +1104,18 @@ const VideoLayout = {
     _setRemoteControlProperties(user, remoteVideo) {
         APP.remoteControl.checkUserRemoteControlSupport(user).then(result =>
             remoteVideo.setRemoteControlSupport(result));
+    },
+
+    /**
+     * Sets the remote screen sharing properties.
+     * @param {JitsiParticipant} user the user that will be checked for remote
+     * screen sharing support.
+     * @param {RemoteVideo} remoteVideo the remoteVideo on which the properties
+     * will be set.
+     */
+    _setRemoteScreenSharingProperties(user, remoteVideo) {
+        APP.remoteScreenSharing.checkUserRemoteScreenSharingSupport(user).then(result =>
+            remoteVideo.setRemoteScreenSharingSupport(result));
     },
 
     /**

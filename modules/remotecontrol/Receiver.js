@@ -252,6 +252,7 @@ export default class Receiver extends RemoteControlParticipant {
             promise = this._sendStartRequest();
         } else {
             promise = APP.conference.toggleScreenSharing(
+                '',
                 true,
                 {
                     desktopSharingSources: [ 'screen' ]

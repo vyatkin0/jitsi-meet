@@ -48,6 +48,7 @@ const config = {
     devServer: {
         https: true,
         inline: true,
+        port: 8081,
         proxy: {
             '/': {
                 bypass: devServerProxyBypass,
@@ -179,6 +180,10 @@ module.exports = [
 function devServerProxyBypass({ path }) {
     if (path.startsWith('/css/') || path.startsWith('/doc/')) {
         return path;
+    }
+
+    if (path.startsWith('/external_api.js')) {
+        return '/libs/external_api.js';
     }
 
     const configs = module.exports;

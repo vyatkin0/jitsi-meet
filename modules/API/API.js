@@ -188,6 +188,7 @@ function shouldBeEnabled() {
 /**
  * Executes on toggle-share-screen command.
  *
+ * @param {Object} screen - Optional screen id.
  * @returns {void}
  */
 function toggleScreenSharing(screen) {
