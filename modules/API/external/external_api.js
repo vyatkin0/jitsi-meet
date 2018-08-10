@@ -208,6 +208,10 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
      * information about new participants that will be invited in the call.
      */
     constructor(domain, ...args) {
+
+        var start = new Date().getTime();
+        console.log('WebRtc JitsiMeetExternalAPI constructor ' + start);
+
         super();
         const {
             roomName = '',
@@ -281,6 +285,9 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
         }
 
         this._frame = this._parentNode.appendChild(this._frame);
+
+        var start = new Date().getTime();
+        console.log('WebRtc JitsiMeetExternalAPI _createIFrame ' + start);
     }
 
     /**

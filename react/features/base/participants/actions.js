@@ -241,6 +241,10 @@ export function participantDisplayNameChanged(id, displayName = '') {
  * }}
  */
 export function participantJoined(participant) {
+
+    var start = new Date().getTime();
+    console.log('WebRtc JitsiMeetExternalAPI participantJoined ' + start +' '+ JSON.stringify(participant));
+
     // Only the local participant is not identified with an id-conference pair.
     if (participant.local) {
         return {

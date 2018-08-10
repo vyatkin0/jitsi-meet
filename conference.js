@@ -681,6 +681,9 @@ export default {
     init(options) {
         this.roomName = options.roomName;
 
+        var start = new Date().getTime();
+        console.log('WebRtc conference init ' + start);
+
         return (
             this.createInitialLocalTracksAndConnect(
                 options.roomName, {
