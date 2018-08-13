@@ -4,6 +4,7 @@ import { CONNECTION_WILL_CONNECT, SET_LOCATION_URL } from '../connection';
 import { JitsiConferenceErrors } from '../lib-jitsi-meet';
 import { assign, ReducerRegistry, set } from '../redux';
 import { LOCKED_LOCALLY, LOCKED_REMOTELY } from '../../room-lock';
+import jitsiLocalStorage from '../../../../modules/util/JitsiLocalStorage';
 
 import {
     AUTH_STATUS_CHANGED,
@@ -88,6 +89,10 @@ ReducerRegistry.register(
             return _setPassword(state, action);
 
         case SET_PREFERRED_RECEIVER_VIDEO_QUALITY:
+            jitsiLocalStorage.setItem(
+                'preferredReceiverVideoQuality',
+                action.preferredReceiverVideoQuality);
+
             return set(
                 state,
                 'preferredReceiverVideoQuality',
@@ -343,6 +348,10 @@ function _p2pStatusChanged(state, action) {
  * reduction of the specified action.
  */
 function _setAudioOnly(state, action) {
+    jitsiLocalStorage.setItem(
+        'audioOnly',
+        action.audioOnly);
+
     return set(state, 'audioOnly', action.audioOnly);
 }
 

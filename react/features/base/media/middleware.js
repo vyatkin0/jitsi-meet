@@ -19,6 +19,8 @@ import {
     _VIDEO_INITIAL_MEDIA_STATE
 } from './reducer';
 
+import jitsiLocalStorage from '../../../../modules/util/JitsiLocalStorage';
+
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 /**
@@ -123,40 +125,46 @@ function _setRoom({ dispatch, getState }, next, action) {
     // XXX After the introduction of the "Video <-> Voice" toggle on the
     // WelcomePage, startAudioOnly is utilized even outside of
     // conferences/meetings.
+    const audioOnlyLocal = jitsiLocalStorage.getItem('audioOnly');
+    
     let audioOnly;
 
-    if (JitsiMeetJS.mediaDevices.supportsVideo()) {
-        audioOnly
-            = Boolean(
-                getPropertyValue(
-                    state,
-                    'startAudioOnly',
-                    /* sources */ {
-                        // FIXME Practically, base/config is (really) correct
-                        // only if roomIsValid. At the time of this writing,
-                        // base/config is overwritten by URL params which leaves
-                        // base/config incorrect on the WelcomePage after
-                        // leaving a conference which explicitly overwrites
-                        // base/config with URL params.
-                        config: roomIsValid,
+    if (audioOnlyLocal === null) {
+        if (JitsiMeetJS.mediaDevices.supportsVideo()) {
+            audioOnly
+                = Boolean(
+                    getPropertyValue(
+                        state,
+                        'startAudioOnly',
+                        /* sources */ {
+                            // FIXME Practically, base/config is (really) correct
+                            // only if roomIsValid. At the time of this writing,
+                            // base/config is overwritten by URL params which leaves
+                            // base/config incorrect on the WelcomePage after
+                            // leaving a conference which explicitly overwrites
+                            // base/config with URL params.
+                            config: roomIsValid,
 
-                        // XXX We've already overwritten base/config with
-                        // urlParams if roomIsValid. However, settings are more
-                        // important than the server-side config. Consequently,
-                        // we need to read from urlParams anyway. We also
-                        // probably want to read from urlParams when
-                        // !roomIsValid.
-                        urlParams: true,
+                            // XXX We've already overwritten base/config with
+                            // urlParams if roomIsValid. However, settings are more
+                            // important than the server-side config. Consequently,
+                            // we need to read from urlParams anyway. We also
+                            // probably want to read from urlParams when
+                            // !roomIsValid.
+                            urlParams: true,
 
-                        // The following don't have complications around whether
-                        // they are defined or not:
-                        jwt: false,
-                        settings: true
-                    }));
+                            // The following don't have complications around whether
+                            // they are defined or not:
+                            jwt: false,
+                            settings: true
+                        }));
+        } else {
+            // Default to audio-only if the (execution) environment does not
+            // support (sending and/or receiving) video.
+            audioOnly = true;
+        }
     } else {
-        // Default to audio-only if the (execution) environment does not
-        // support (sending and/or receiving) video.
-        audioOnly = true;
+        audioOnly = audioOnlyLocal === 'true';
     }
 
     sendAnalytics(createStartAudioOnlyEvent(audioOnly));
