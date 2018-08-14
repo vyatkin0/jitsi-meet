@@ -178,12 +178,6 @@ class RemoteVideoMenuTriggerButton extends Component<*> {
                     key = 'kick'
                     participantID = { participantID } />
             );
-            buttons.push(
-                <ShareScreenButton
-                    key = 'share-screen'
-                    onClick = { onRemoteScreenShareToggle }
-                    participantID = { participantID } />
-            );
         }
 
         if (remoteScreenSharingState.sharing) {
