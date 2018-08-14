@@ -209,8 +209,8 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
      */
     constructor(domain, ...args) {
 
-        var start = new Date().getTime();
-        console.log('WebRtc JitsiMeetExternalAPI constructor ' + start);
+        //var start = new Date().getTime();
+        //console.log('WebRtc JitsiMeetExternalAPI constructor ' + start);
 
         super();
         const {
@@ -286,8 +286,8 @@ export default class JitsiMeetExternalAPI extends EventEmitter {
 
         this._frame = this._parentNode.appendChild(this._frame);
 
-        var start = new Date().getTime();
-        console.log('WebRtc JitsiMeetExternalAPI _createIFrame ' + start);
+        //var start = new Date().getTime();
+        //console.log('WebRtc JitsiMeetExternalAPI _createIFrame ' + start);
     }
 
     /**
