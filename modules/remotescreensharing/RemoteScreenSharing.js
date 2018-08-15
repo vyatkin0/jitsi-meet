@@ -121,7 +121,8 @@ class RemoteScreenSharing extends EventEmitter {
      */
     checkUserRemoteScreenSharingSupport(user: Object) {
         return user.getFeatures().then(
-            features => ({sharing:features.has(DISCO_REMOTE_SCREEN_SHARING_FEATURE), shared: features.has(DISCO_REMOTE_SCREEN_SHARED_FEATURE)}),
+            features => ({ sharing: features.has(DISCO_REMOTE_SCREEN_SHARING_FEATURE),
+                shared: features.has(DISCO_REMOTE_SCREEN_SHARED_FEATURE) }),
             () => false);
     }
 
@@ -141,7 +142,21 @@ class RemoteScreenSharing extends EventEmitter {
         }
 
         if (message.type === EVENTS.startScreenSharing) {
-            APP.conference.toggleScreenSharing(message.screen_id);
+
+            let screenId = message.screen_id;
+
+            if (!screenId) {
+
+                screenId = '0:0';
+
+                const { JitsiMeetElectron } = window;
+
+                if (JitsiMeetElectron && JitsiMeetElectron.getPrimaryScreen) {
+                    screenId = JitsiMeetElectron.getPrimaryScreen();
+                }
+            }
+
+            APP.conference.toggleScreenSharing(screenId);
 
             return;
         }

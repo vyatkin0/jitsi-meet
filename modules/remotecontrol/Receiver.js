@@ -183,12 +183,6 @@ export default class Receiver extends RemoteControlParticipant {
             return;
         }
 
-        if (message.type === EVENTS.startScreenSharing) {
-            APP.conference.toggleScreenSharing(message.screen_id);
-
-            return;
-        }
-
         if (this._enabled) {
             if (this._controller === null
                     && message.type === EVENTS.permissions
@@ -196,7 +190,8 @@ export default class Receiver extends RemoteControlParticipant {
                 const userId = participant.getId();
 
                 this.emit(RemoteControlEvents.ACTIVE_CHANGED, true);
-                //APP.store.dispatch(
+
+                // APP.store.dispatch(
                 //    openRemoteControlAuthorizationDialog(userId));
                 this.grant(userId);
                 APP.UI.messageHandler.notify(
@@ -251,8 +246,16 @@ export default class Receiver extends RemoteControlParticipant {
                 && APP.conference.getDesktopSharingSourceType() === 'screen') {
             promise = this._sendStartRequest();
         } else {
+            let screenId = '0:0';
+
+            const { JitsiMeetElectron } = window;
+
+            if (JitsiMeetElectron && JitsiMeetElectron.getPrimaryScreen) {
+                screenId = JitsiMeetElectron.getPrimaryScreen();
+            }
+
             promise = APP.conference.toggleScreenSharing(
-                '',
+                screenId,
                 true,
                 {
                     desktopSharingSources: [ 'screen' ]

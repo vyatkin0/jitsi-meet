@@ -77,7 +77,7 @@ class RemoteVideoMenuTriggerButton extends Component<*> {
         /**
          * The current state of the participant's remote screen sharing session.
          */
-        remoteScreenSharingState: PropTypes.number
+        remoteScreenSharingState: PropTypes.object
     };
 
     /**
@@ -183,9 +183,9 @@ class RemoteVideoMenuTriggerButton extends Component<*> {
         if (remoteScreenSharingState.sharing) {
             buttons.push(
                 <ShareScreenButton
+                    isShared = {remoteScreenSharingState.shared }
                     key = 'share-screen'
                     onClick = { onRemoteScreenShareToggle }
-                    isShared = {remoteScreenSharingState.shared}
                     participantID = { participantID } />
             );
         }
