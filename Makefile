@@ -1,7 +1,8 @@
 BUILD_DIR = build
 CLEANCSS = ./node_modules/.bin/cleancss
 DEPLOY_DIR = libs
-LIBJITSIMEET_DIR = node_modules/lib-jitsi-meet
+LIBJITSIMEET_DIR = node_modules/lib-jitsi-meet/
+LIBFLAC_DIR = node_modules/libflacjs/dist/min/
 NODE_SASS = ./node_modules/.bin/node-sass
 NPM = npm
 OUTPUT_DIR = .
@@ -21,7 +22,7 @@ compile:
 clean:
 	rm -fr $(BUILD_DIR)
 
-deploy: deploy-init deploy-appbundle deploy-lib-jitsi-meet deploy-css deploy-local
+deploy: deploy-init deploy-appbundle deploy-lib-jitsi-meet deploy-libflac deploy-css deploy-local
 
 deploy-init:
 	rm -fr $(DEPLOY_DIR)
@@ -35,6 +36,8 @@ deploy-appbundle:
 		$(BUILD_DIR)/do_external_connect.min.map \
 		$(BUILD_DIR)/external_api.min.js \
 		$(BUILD_DIR)/external_api.min.map \
+		$(BUILD_DIR)/flacEncodeWorker.min.js \
+		$(BUILD_DIR)/flacEncodeWorker.min.map \
 		$(BUILD_DIR)/device_selection_popup_bundle.min.js \
 		$(BUILD_DIR)/device_selection_popup_bundle.min.map \
 		$(BUILD_DIR)/dial_in_info_bundle.min.js \
@@ -52,6 +55,12 @@ deploy-lib-jitsi-meet:
 		$(LIBJITSIMEET_DIR)/modules/browser/capabilities.json \
 		$(DEPLOY_DIR)
 
+deploy-libflac:
+	cp \
+		$(LIBFLAC_DIR)/libflac4-1.3.2.min.js \
+		$(LIBFLAC_DIR)/libflac4-1.3.2.min.js.mem \
+		$(DEPLOY_DIR)
+
 deploy-css:
 	$(NODE_SASS) $(STYLES_MAIN) $(STYLES_BUNDLE) && \
 	$(CLEANCSS) $(STYLES_BUNDLE) > $(STYLES_DESTINATION) ; \
@@ -60,7 +69,7 @@ deploy-css:
 deploy-local:
 	([ ! -x deploy-local.sh ] || ./deploy-local.sh)
 
-dev: deploy-init deploy-css deploy-lib-jitsi-meet
+dev: deploy-init deploy-css deploy-lib-jitsi-meet deploy-libflac
 	$(WEBPACK_DEV_SERVER)
 
 source-package:

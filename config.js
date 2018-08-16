@@ -256,6 +256,10 @@ var config = {
     // maintenance at 01:00 AM GMT,
     // noticeMessage: '',
 
+    // Enables calendar integration, depends on googleApiApplicationClientID
+    // and microsoftApiApplicationClientID
+    // enableCalendarIntegration: false,
+
     // Stats
     //
 
@@ -347,6 +351,36 @@ var config = {
         // userRegion: "asia"
     }
 
+    // Local Recording
+    //
+
+    // localRecording: {
+    // Enables local recording.
+    // Additionally, 'localrecording' (all lowercase) needs to be added to
+    // TOOLBAR_BUTTONS in interface_config.js for the Local Recording
+    // button to show up on the toolbar.
+    //
+    //     enabled: true,
+    //
+
+    // The recording format, can be one of 'ogg', 'flac' or 'wav'.
+    //     format: 'flac'
+    //
+
+    // }
+
+    // Options related to end-to-end (participant to participant) ping.
+    // e2eping: {
+    //   // The interval in milliseconds at which pings will be sent.
+    //   // Defaults to 10000, set to <= 0 to disable.
+    //   pingInterval: 10000,
+    //
+    //   // The interval in milliseconds at which analytics events
+    //   // with the measured RTT will be sent. Defaults to 60000, set
+    //   // to <= 0 to disable.
+    //   analyticsInterval: 60000,
+    //   }
+
     // List of undocumented settings used in jitsi-meet
     /**
      _immediateReloadThreshold
@@ -368,6 +402,7 @@ var config = {
      googleApiApplicationClientID
      iAmRecorder
      iAmSipGateway
+     microsoftApiApplicationClientID
      peopleSearchQueryTypes
      peopleSearchUrl
      requireDisplayName
@@ -396,6 +431,7 @@ var config = {
      nick
      startBitrate
      */
+
 };
 
 /* eslint-enable no-unused-vars, no-var */

@@ -3,7 +3,9 @@
 import React, { Component } from 'react';
 
 import { isFilmstripVisible } from '../../filmstrip';
+import { LocalRecordingLabel } from '../../local-recording';
 import { RecordingLabel } from '../../recording';
+import { shouldDisplayTileView } from '../../video-layout';
 import { VideoQualityLabel } from '../../video-quality';
 import { TranscribingLabel } from '../../transcribing/';
 
@@ -17,6 +19,11 @@ export type Props = {
     * determine display classes to set.
     */
     _filmstripVisible: boolean,
+
+    /**
+     * Whether or not the video quality label should be displayed.
+     */
+    _showVideoQualityLabel: boolean
 };
 
 /**
@@ -63,6 +70,18 @@ export default class AbstractLabels<P: Props, S> extends Component<P, S> {
             <TranscribingLabel />
         );
     }
+
+    /**
+     * Renders the {@code LocalRecordingLabel}.
+     *
+     * @returns {React$Element}
+     * @protected
+     */
+    _renderLocalRecordingLabel() {
+        return (
+            <LocalRecordingLabel />
+        );
+    }
 }
 
 /**
@@ -72,11 +91,13 @@ export default class AbstractLabels<P: Props, S> extends Component<P, S> {
  * @param {Object} state - The Redux state.
  * @private
  * @returns {{
- *     _filmstripVisible: boolean
+ *     _filmstripVisible: boolean,
+ *     _showVideoQualityLabel: boolean
  * }}
  */
 export function _abstractMapStateToProps(state: Object) {
     return {
-        _filmstripVisible: isFilmstripVisible(state)
+        _filmstripVisible: isFilmstripVisible(state),
+        _showVideoQualityLabel: !shouldDisplayTileView(state)
     };
 }

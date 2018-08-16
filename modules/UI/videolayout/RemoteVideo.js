@@ -20,6 +20,11 @@ import {
     REMOTE_CONTROL_MENU_STATES,
     RemoteVideoMenuTriggerButton
 } from '../../../react/features/remote-video-menu';
+import {
+    LAYOUTS,
+    getCurrentLayout,
+    shouldDisplayTileView
+} from '../../../react/features/video-layout';
 /* eslint-enable no-unused-vars */
 
 import {
@@ -184,6 +189,17 @@ RemoteVideo.prototype._generatePopupContent = function() {
     const { isModerator } = APP.conference;
     const participantID = this.id;
 
+    const currentLayout = getCurrentLayout(APP.store.getState());
+    let remoteMenuPosition;
+
+    if (currentLayout === LAYOUTS.TILE_VIEW) {
+        remoteMenuPosition = 'left top';
+    } else if (currentLayout === LAYOUTS.VERTICAL_FILMSTRIP_VIEW) {
+        remoteMenuPosition = 'left bottom';
+    } else {
+        remoteMenuPosition = 'top center';
+    }
+
     ReactDOM.render(
         <Provider store = { APP.store }>
             <I18nextProvider i18n = { i18next }>
@@ -192,6 +208,7 @@ RemoteVideo.prototype._generatePopupContent = function() {
                         initialVolumeValue = { initialVolumeValue }
                         isAudioMuted = { this.isAudioMuted }
                         isModerator = { isModerator }
+                        menuPosition = { remoteMenuPosition }
                         onMenuDisplay
                             = {this._onRemoteVideoMenuDisplay.bind(this)}
                         onRemoteControlToggle = { onRemoteControlToggle }
@@ -664,7 +681,8 @@ RemoteVideo.prototype._onContainerClick = function(event) {
     const { classList } = event.target;
 
     const ignoreClick = $source.parents('.popover').length > 0
-            || classList.contains('popover');
+            || classList.contains('popover')
+            || shouldDisplayTileView(APP.store.getState());
 
     if (!ignoreClick) {
         this._togglePin();

@@ -35,6 +35,7 @@ import {
     conferenceJoined,
     conferenceLeft,
     conferenceWillJoin,
+    conferenceWillLeave,
     dataChannelOpened,
     EMAIL_COMMAND,
     lockStateChanged,
@@ -44,6 +45,7 @@ import {
     setDesktopSharingEnabled
 } from './react/features/base/conference';
 import {
+    getAvailableDevices,
     setAudioOutputDeviceId,
     updateDeviceList
 } from './react/features/base/devices';
@@ -374,6 +376,8 @@ class ConferenceConnector {
 
         case JitsiConferenceErrors.FOCUS_LEFT:
         case JitsiConferenceErrors.VIDEOBRIDGE_NOT_AVAILABLE:
+            APP.store.dispatch(conferenceWillLeave(room));
+
             // FIXME the conference should be stopped by the library and not by
             // the app. Both the errors above are unrecoverable from the library
             // perspective.
@@ -470,6 +474,7 @@ function _connectionFailedHandler(error) {
             JitsiConnectionEvents.CONNECTION_FAILED,
             _connectionFailedHandler);
         if (room) {
+            APP.store.dispatch(conferenceWillLeave(room));
             room.leave();
         }
     }
@@ -704,7 +709,7 @@ export default {
                         track.mute();
                     }
                 });
-                logger.log('initialized with %s local tracks', tracks.length);
+                logger.log(`initialized with ${tracks.length} local tracks`);
                 this._localTracksInitialized = true;
                 con.addEventListener(
                     JitsiConnectionEvents.CONNECTION_FAILED,
@@ -1688,7 +1693,7 @@ export default {
                 role: user.getRole()
             }));
 
-            logger.log('USER %s connnected', id, user);
+            logger.log(`USER ${id} connnected:`, user);
             APP.API.notifyUserJoined(id, {
                 displayName,
                 formattedDisplayName: appendSuffix(
@@ -1708,7 +1713,7 @@ export default {
             }
 
             APP.store.dispatch(participantLeft(id, room));
-            logger.log('USER %s LEFT', id, user);
+            logger.log(`USER ${id} LEFT:`, user);
             APP.API.notifyUserLeft(id);
             APP.UI.messageHandler.participantNotification(
                 user.getDisplayName(),
@@ -2140,20 +2145,6 @@ export default {
             }
         );
 
-        APP.UI.addListener(
-            UIEvents.AUDIO_OUTPUT_DEVICE_CHANGED,
-            audioOutputDeviceId => {
-                sendAnalytics(createDeviceChangedEvent('audio', 'output'));
-                setAudioOutputDeviceId(audioOutputDeviceId, APP.store.dispatch)
-                    .then(() => logger.log('changed audio output device'))
-                    .catch(err => {
-                        logger.warn('Failed to change audio output device. '
-                            + 'Default or previously set audio output device '
-                            + 'will be used instead.', err);
-                    });
-            }
-        );
-
         APP.UI.addListener(UIEvents.TOGGLE_AUDIO_ONLY, audioOnly => {
 
             // FIXME On web video track is stored both in redux and in
@@ -2325,39 +2316,43 @@ export default {
     /**
      * Inits list of current devices and event listener for device change.
      * @private
+     * @returns {Promise}
      */
     _initDeviceList() {
         const { mediaDevices } = JitsiMeetJS;
 
         if (mediaDevices.isDeviceListAvailable()
                 && mediaDevices.isDeviceChangeAvailable()) {
-            mediaDevices.enumerateDevices(devices => {
-                // Ugly way to synchronize real device IDs with local storage
-                // and settings menu. This is a workaround until
-                // getConstraints() method will be implemented in browsers.
-                const { dispatch } = APP.store;
-
-                if (this.localAudio) {
-                    dispatch(updateSettings({
-                        micDeviceId: this.localAudio.getDeviceId()
-                    }));
-                }
-                if (this.localVideo) {
-                    dispatch(updateSettings({
-                        cameraDeviceId: this.localVideo.getDeviceId()
-                    }));
-                }
-
-                APP.store.dispatch(updateDeviceList(devices));
-                APP.UI.onAvailableDevicesChanged(devices);
-            });
-
             this.deviceChangeListener = devices =>
                 window.setTimeout(() => this._onDeviceListChanged(devices), 0);
             mediaDevices.addEventListener(
                 JitsiMediaDevicesEvents.DEVICE_LIST_CHANGED,
                 this.deviceChangeListener);
+
+            const { dispatch } = APP.store;
+
+            return dispatch(getAvailableDevices())
+                .then(devices => {
+                    // Ugly way to synchronize real device IDs with local
+                    // storage and settings menu. This is a workaround until
+                    // getConstraints() method will be implemented in browsers.
+                    if (this.localAudio) {
+                        dispatch(updateSettings({
+                            micDeviceId: this.localAudio.getDeviceId()
+                        }));
+                    }
+
+                    if (this.localVideo) {
+                        dispatch(updateSettings({
+                            cameraDeviceId: this.localVideo.getDeviceId()
+                        }));
+                    }
+
+                    APP.UI.onAvailableDevicesChanged(devices);
+                });
         }
+
+        return Promise.resolve();
     },
 
     /**
@@ -2510,11 +2505,22 @@ export default {
         // before all operations are done.
         Promise.all([
             requestFeedbackPromise,
-            room.leave().then(disconnect, disconnect)
+            this.leaveRoomAndDisconnect()
         ]).then(values => {
             APP.API.notifyReadyToClose();
             maybeRedirectToWelcomePage(values[0]);
         });
+    },
+
+    /**
+     * Leaves the room and calls JitsiConnection.disconnect.
+     *
+     * @returns {Promise}
+     */
+    leaveRoomAndDisconnect() {
+        APP.store.dispatch(conferenceWillLeave(room));
+
+        return room.leave().then(disconnect, disconnect);
     },
 
     /**
