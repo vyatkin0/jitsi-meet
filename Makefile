@@ -46,8 +46,6 @@ deploy-appbundle:
 
 deploy-lib-jitsi-meet:
 	cp \
-		$(BUILD_DIR)/external_api.js \
-		$(BUILD_DIR)/external_api.js.map \
 		$(LIBJITSIMEET_DIR)/lib-jitsi-meet.min.js \
 		$(LIBJITSIMEET_DIR)/lib-jitsi-meet.min.map \
 		$(LIBJITSIMEET_DIR)/connection_optimization/external_connect.js \
