@@ -12,37 +12,6 @@ const logger = require('jitsi-meet-logger').getLogger(__filename);
 const OS = Platform.OS;
 
 /**
- * 
- */
-function configureScreenSharing() {
-    const _global = window;
-    
-    if (_global.require) {
-        const electron = _global.require('electron');
-
-        window.JitsiMeetElectron = {
-            getPrimaryDisplay: electron.screen.getPrimaryDisplay,
-            obtainDesktopStreams(callback, errorCallback, options = {}) {
-                electron.desktopCapturer.getSources(options,
-                    (error, sources) => {
-                        if (error) {
-                            errorCallback(error);
-
-                            return;
-                        }
-                        callback(sources);
-                    });
-            }
-        };
-    }
-}
-
-function isDesktopApp() {
-    const userAgent = window.navigator.userAgent;
-    return userAgent.indexOf('Electron') !== -1;
-}
-
-/**
  * Renders the app when the DOM tree has been loaded.
  */
 document.addEventListener('DOMContentLoaded', () => {
@@ -53,10 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Render the main/root Component.
     ReactDOM.render(<App />, document.getElementById('react'));
-
-    //if (isDesktopApp()) {
-    //    configureScreenSharing();
-    //}
 });
 
 // Workaround for the issue when returning to a page with the back button and
