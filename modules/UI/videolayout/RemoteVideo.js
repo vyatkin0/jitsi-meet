@@ -102,6 +102,9 @@ function RemoteVideo(user, VideoLayout, emitter) {
     this._stopRemoteControl = this._stopRemoteControl.bind(this);
     this._startRemoteScreenSharing = this._startRemoteScreenSharing.bind(this);
     this.container.onclick = this._onContainerClick.bind(this);
+
+    // Remote controller may be activated before this RemoteVideo object created
+    APP.remoteControl.controller.Area = VideoLayout.getLargeVideoWrapper();
 }
 
 RemoteVideo.prototype = Object.create(SmallVideo.prototype);

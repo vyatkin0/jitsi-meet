@@ -99,7 +99,15 @@ function initCommands() {
         'avatar-url': avatarUrl => {
             sendAnalytics(createApiEvent('avatar.url.changed'));
             APP.conference.changeLocalAvatarUrl(avatarUrl);
-        }
+        },
+        'start-remote-controller': () => {
+            sendAnalytics(createApiEvent('start.remote.controller'));
+            startRemoteController();
+        },
+        'start-remote-receiver': (controller, screen) => {
+            sendAnalytics(createApiEvent('start.remote.receiver'));
+            startRemoteReceiver(controller, screen);
+        },
     };
     transport.on('event', ({ data, name }) => {
         if (name && commands[name]) {
@@ -163,6 +171,25 @@ function initCommands() {
 
         return true;
     });
+}
+
+/**
+ * Starts remote cotroller
+ */
+function startRemoteController() {
+    if( !APP.remoteControl.controller._enabled) return;
+    APP.remoteControl.controller.activate();
+}
+
+/**
+ * Starts remote receiver
+ * 
+ * @param {?string} controller - The id associated with the user who is authorized for remote control.
+ */
+function startRemoteReceiver(controller, screen) {
+    if (!controller) return;
+    if (!APP.remoteControl.receiver) return;
+    APP.remoteControl.receiver.grant(controller, screen);
 }
 
 /**

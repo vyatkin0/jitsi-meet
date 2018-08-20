@@ -232,9 +232,10 @@ export default class Receiver extends RemoteControlParticipant {
      *
      * @param {string} userId - The id associated with the user who sent the
      * request for remote control authorization.
+     * @param {string} screen - Screen id for remote control.
      * @returns {void}
      */
-    grant(userId: string) {
+    grant(userId: string, screen: string) {
         APP.conference.addConferenceListener(JitsiConferenceEvents.USER_LEFT,
             this._userLeftListener);
         this._controller = userId;
@@ -248,10 +249,14 @@ export default class Receiver extends RemoteControlParticipant {
         } else {
             let screenId = '0:0';
 
-            const { JitsiMeetElectron } = window;
+            if (screen) {
+                screenId = screen;
+            } else {
+                const { JitsiMeetElectron } = window;
 
-            if (JitsiMeetElectron && JitsiMeetElectron.getPrimaryScreen) {
-                screenId = JitsiMeetElectron.getPrimaryScreen();
+                if (JitsiMeetElectron && JitsiMeetElectron.getPrimaryScreen) {
+                    screenId = JitsiMeetElectron.getPrimaryScreen();
+                }
             }
 
             promise = APP.conference.toggleScreenSharing(

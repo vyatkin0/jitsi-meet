@@ -99,6 +99,26 @@ export default class Controller extends RemoteControlParticipant {
     }
 
     /**
+     * Setter for area property 
+     * @param {JQuerySelector} eventCaptureArea - The area that is going to be
+     * used mouse and keyboard event capture.
+     */
+    set Area(eventCaptureArea)
+    {
+        logger.log(`Remote controller area set to: ${eventCaptureArea}`);
+        this._area = eventCaptureArea;// $("#largeVideoWrapper")
+    }
+
+    /**
+     * Activates controller
+     */
+    activate()
+    {
+        logger.log('Remote controller activated.');
+        this.emit(RemoteControlEvents.ACTIVE_CHANGED, true);
+    }
+
+    /**
      * Requests permissions from the remote control receiver side.
      *
      * @param {string} userId - The user id of the participant that will be
