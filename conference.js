@@ -112,7 +112,10 @@ import { setSharedVideoStatus } from './react/features/shared-video';
 import { isButtonEnabled } from './react/features/toolbox';
 import { endpointMessageReceived } from './react/features/subtitles';
 
-import {DISCO_REMOTE_SCREEN_SHARED_FEATURE} from './modules/remotescreensharing/RemoteScreenSharing';
+import { DISCO_REMOTE_SCREEN_SHARED_FEATURE }
+    from './modules/remotescreensharing/RemoteScreenSharing';
+
+import { DISCO_DATA_CHANNEL_OPENED } from './service/remotecontrol/Constants';
 
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
@@ -1385,6 +1388,7 @@ export default {
                     logger.error('failed to switch back to local video', error);
 
                     return this.useVideoStream(null).then(() =>
+
                         // Still fail with the original err
                         Promise.reject(error)
                     );
@@ -2034,7 +2038,19 @@ export default {
 
         room.on(
             JitsiConferenceEvents.DATA_CHANNEL_OPENED, () => {
+                logger.log('Jitsi: DATA_CHANNEL_OPENED');
+
                 APP.store.dispatch(dataChannelOpened());
+                APP.connection.addFeature(DISCO_DATA_CHANNEL_OPENED, true);
+
+                this.dataChannelOpened = true;
+
+                if (APP.remoteControl.controller.initId) {
+                    logger.log('Jitsi: DATA_CHANNEL_OPENED APP.remoteControl.controller.initId');
+                    window.setTimeout(() =>
+                        APP.API.startRemoteController(
+                            APP.remoteControl.controller.initId), 0);
+                }
             }
         );
 

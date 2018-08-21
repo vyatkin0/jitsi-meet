@@ -11,6 +11,8 @@ import { getJitsiMeetTransport } from '../transport';
 
 import { API_ID } from './constants';
 
+import VideoLayout from '../UI/videolayout/VideoLayout';
+
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 declare var APP: Object;
@@ -100,14 +102,10 @@ function initCommands() {
             sendAnalytics(createApiEvent('avatar.url.changed'));
             APP.conference.changeLocalAvatarUrl(avatarUrl);
         },
-        'start-remote-controller': () => {
+        'start-remote-controller': id => {
             sendAnalytics(createApiEvent('start.remote.controller'));
-            startRemoteController();
-        },
-        'start-remote-receiver': (controller, screen) => {
-            sendAnalytics(createApiEvent('start.remote.receiver'));
-            startRemoteReceiver(controller, screen);
-        },
+            startRemoteController(id);
+        }
     };
     transport.on('event', ({ data, name }) => {
         if (name && commands[name]) {
@@ -174,22 +172,35 @@ function initCommands() {
 }
 
 /**
- * Starts remote cotroller
+ * Starts remote control for participant.
+ *
+ * @param {*} id - Id of a remote participant.
+ *  @returns {void}
  */
-function startRemoteController() {
-    if( !APP.remoteControl.controller._enabled) return;
-    APP.remoteControl.controller.activate();
-}
+function startRemoteController(id) {
+    if (APP.conference.isLocalId(id)) {
+        return;
+    }
 
-/**
- * Starts remote receiver
- * 
- * @param {?string} controller - The id associated with the user who is authorized for remote control.
- */
-function startRemoteReceiver(controller, screen) {
-    if (!controller) return;
-    if (!APP.remoteControl.receiver) return;
-    APP.remoteControl.receiver.grant(controller, screen);
+    if (!APP.remoteControl.controller._enabled) {
+        return;
+    }
+
+    logger.log('Jitsi: startRemoteController');
+
+    APP.remoteControl.controller.initId = id;
+
+    if (APP.conference.dataChannelOpened) {
+        const remoteVideo = VideoLayout.getSmallVideo(id);
+
+        if (remoteVideo) {
+            remoteVideo._requestRemoteControlPermissions();
+        }
+
+        return;
+    }
+
+    logger.log('Jitsi: startRemoteController !APP.conference.dataChannelOpened');
 }
 
 /**
@@ -273,6 +284,16 @@ class API {
             onDesktopSharingEnabledChanged);
 
         initCommands();
+    }
+
+    /**
+     * Starts remote control for participant.
+     *
+     * @param {*} id - Id of a remote participant.
+     *  @returns {void}
+     */
+    startRemoteController(id) {
+        startRemoteController(id);
     }
 
     /**

@@ -1098,9 +1098,12 @@ const VideoLayout = {
      * Handles user's features changes.
      */
     onUserFeaturesChanged(user) {
+        logger.log(`Jitsi: onUserFeaturesChanged ${user.getId()}`);
         const video = this.getSmallVideo(user.getId());
 
         if (!video) {
+            logger.log('Jitsi: onUserFeaturesChanged !video');
+
             return;
         }
         this._setRemoteControlProperties(user, video);

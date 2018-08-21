@@ -3,7 +3,7 @@
 import EventEmitter from 'events';
 import { getLogger } from 'jitsi-meet-logger';
 
-import { DISCO_REMOTE_CONTROL_FEATURE }
+import { DISCO_REMOTE_CONTROL_FEATURE, DISCO_DATA_CHANNEL_OPENED }
     from '../../service/remotecontrol/Constants';
 import * as RemoteControlEvents
     from '../../service/remotecontrol/RemoteControlEvents';
@@ -92,8 +92,15 @@ class RemoteControl extends EventEmitter {
      * the user supports remote control and with false if not.
      */
     checkUserRemoteControlSupport(user: Object) {
+        logger.log('Jitsi: checkUserRemoteControlSupport');
+
         return user.getFeatures().then(
-            features => features.has(DISCO_REMOTE_CONTROL_FEATURE),
+            features => {
+                logger.log(`Jitsi: checkUserRemoteControlSupport R=${features.has(DISCO_REMOTE_CONTROL_FEATURE)} D=${features.has(DISCO_DATA_CHANNEL_OPENED)}`);
+
+                return features.has(DISCO_REMOTE_CONTROL_FEATURE)
+                            && features.has(DISCO_DATA_CHANNEL_OPENED);
+            },
             () => false);
     }
 }

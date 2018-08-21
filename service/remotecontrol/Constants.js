@@ -5,6 +5,12 @@ export const DISCO_REMOTE_CONTROL_FEATURE
     = 'http://jitsi.org/meet/remotecontrol';
 
 /**
+ * This feature is necessary for the remote control
+ * The remote control is not possible until data channel opened.
+ */
+export const DISCO_DATA_CHANNEL_OPENED
+    = 'http://jitsi.org/meet/datachannel';
+/**
  * Types of remote-control events.
   * @readonly
   * @enum {string}

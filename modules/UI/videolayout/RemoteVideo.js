@@ -27,11 +27,6 @@ import {
 } from '../../../react/features/video-layout';
 /* eslint-enable no-unused-vars */
 
-import {
-    EVENTS,
-    REMOTE_CONTROL_MESSAGE_NAME
-} from '../../../service/remotecontrol/Constants';
-
 const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 import { openDialog } from '../../../react/features/base/dialog';
@@ -61,7 +56,8 @@ function RemoteVideo(user, VideoLayout, emitter) {
     SmallVideo.call(this, VideoLayout);
     this._audioStreamElement = null;
     this._supportsRemoteControl = false;
-    this._supportsRemoteScreenSharing = {sharing:false, shared:false};
+    this._supportsRemoteScreenSharing = { sharing: false,
+        shared: false };
     this.statsPopoverLocation = interfaceConfig.VERTICAL_FILMSTRIP
         ? 'left bottom' : 'top center';
     this.addRemoteVideoContainer();
@@ -160,7 +156,8 @@ RemoteVideo.prototype._generatePopupContent = function() {
         return;
     }
 
-    let remoteScreenSharingState = {sharing:false, shared:false};
+    let remoteScreenSharingState = { sharing: false,
+        shared: false };
 
     if (APP.remoteScreenSharing.initialized) {
         remoteScreenSharingState = this._supportsRemoteScreenSharing;
@@ -248,11 +245,17 @@ RemoteVideo.prototype.setRemoteControlActiveStatus = function(isActive) {
  * @param {boolean} isSupported
  */
 RemoteVideo.prototype.setRemoteControlSupport = function(isSupported = false) {
+    logger.log(`Jitsi: setRemoteControlSupport ${isSupported} ${APP.remoteControl.controller.initId}`);
+
     if (this._supportsRemoteControl === isSupported) {
         return;
     }
     this._supportsRemoteControl = isSupported;
     this.updateRemoteVideoMenu();
+
+    if (isSupported && this.id === APP.remoteControl.controller.initId) {
+        this._requestRemoteControlPermissions();
+    }
 };
 
 /**
@@ -262,12 +265,13 @@ RemoteVideo.prototype.setRemoteControlSupport = function(isSupported = false) {
  * @param {boolean} isSupported
  */
 RemoteVideo.prototype.setRemoteScreenSharingSupport
-    = function(isSupported = {sharing:false, shared:false}) {
-        if (this._supportsRemoteScreenSharing.sharing === isSupported.sharing &&
-            this._supportsRemoteScreenSharing.shared === isSupported.shared) {
+    = function(isSupported = { sharing: false,
+        shared: false }) {
+        if (this._supportsRemoteScreenSharing.sharing === isSupported.sharing
+            && this._supportsRemoteScreenSharing.shared === isSupported.shared) {
             return;
         }
-        this._supportsRemoteScreenSharing = {...isSupported};
+        this._supportsRemoteScreenSharing = { ...isSupported };
         this.updateRemoteVideoMenu();
     };
 
@@ -276,12 +280,27 @@ RemoteVideo.prototype.setRemoteScreenSharingSupport
  * Requests permissions for remote control session.
  */
 RemoteVideo.prototype._requestRemoteControlPermissions = function() {
+    logger.log('Jitsi: _requestRemoteControlPermissions');
+
+    if (!this._supportsRemoteControl) {
+        logger.log('Jitsi: !_supportsRemoteControl');
+
+        return;
+    }
+
+    if (!APP.conference.dataChannelOpened) {
+        logger.log('Jitsi: !APP.conference.dataChannelOpened');
+
+        return;
+    }
+
     APP.remoteControl.controller.requestPermissions(
         this.id, this.VideoLayout.getLargeVideoWrapper()).then(result => {
         if (result === null) {
             return;
         }
         this.updateRemoteVideoMenu();
+
         APP.UI.messageHandler.notify(
             'dialog.remoteControlTitle',
             result === false ? 'dialog.remoteControlDeniedMessage'
@@ -289,6 +308,7 @@ RemoteVideo.prototype._requestRemoteControlPermissions = function() {
             { user: this.user.getDisplayName()
                 || interfaceConfig.DEFAULT_REMOTE_DISPLAY_NAME }
         );
+
         if (result === true) {
             // the remote control permissions has been granted
             // pin the controlled participant
@@ -299,6 +319,12 @@ RemoteVideo.prototype._requestRemoteControlPermissions = function() {
             if (pinnedId !== this.id) {
                 APP.store.dispatch(pinParticipant(this.id));
             }
+        }
+
+        logger.log('Jitsi: _requestRemoteControlPermissions success');
+
+        if (APP.remoteControl.controller.initId === this.id) {
+            APP.remoteControl.controller.initId = null;
         }
     }, error => {
         logger.error(error);
@@ -326,10 +352,10 @@ RemoteVideo.prototype._stopRemoteControl = function() {
  * Starts remote screen sharing.
  */
 RemoteVideo.prototype._startRemoteScreenSharing = function() {
-    if(this._supportsRemoteScreenSharing && this._supportsRemoteScreenSharing.shared) {
+    if (this._supportsRemoteScreenSharing
+        && this._supportsRemoteScreenSharing.shared) {
         toggleRemoteScreenSharing(this.id);
-    }
-    else {
+    } else {
         return APP.store.dispatch(openDialog(ScreenPrompt, {
             remoteId: this.id
         }));
