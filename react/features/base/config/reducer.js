@@ -5,6 +5,7 @@ import _ from 'lodash';
 import { equals, ReducerRegistry, set } from '../redux';
 
 import { CONFIG_WILL_LOAD, LOAD_CONFIG_ERROR, SET_CONFIG } from './actionTypes';
+import { _cleanupConfig } from './functions';
 
 /**
  * The initial state of the feature base/config when executing in a
@@ -29,6 +30,8 @@ const INITIAL_NON_RN_STATE = {
  * @type {Object}
  */
 const INITIAL_RN_STATE = {
+    analytics: {},
+
     // FIXME The support for audio levels in lib-jitsi-meet polls the statistics
     // of WebRTC at a short interval multiple times a second. Unfortunately,
     // React Native is slow to fetch these statistics from the native WebRTC
@@ -135,6 +138,8 @@ function _setConfig(state, { config }) {
         _getInitialState()
     );
 
+    _cleanupConfig(newState);
+
     return equals(state, newState) ? state : newState;
 }
 
@@ -153,47 +158,42 @@ function _setConfig(state, { config }) {
  * supported by jitsi-meet.
  */
 function _translateLegacyConfig(oldValue: Object) {
-    // jitsi/jitsi-meet#3ea2f005787c9f49c48febaeed9dc0340fe0a01b
-
     let newValue = oldValue;
 
-    // At the time of this writing lib-jitsi-meet will rely on config having a
-    // property with the name p2p and with a value of type Object.
-    if (typeof oldValue.p2p !== 'object') {
-        newValue = set(newValue, 'p2p', {});
-    }
+    const oldConfigToNewConfig = {
+        analytics: [
+            [ 'analyticsScriptUrls', 'scriptURLs' ],
+            [ 'googleAnalyticsTrackingId', 'googleAnalyticsTrackingId' ]
+        ]
+    };
 
-    /* eslint-disable indent */
+    // Translate the old config properties into the new config properties.
+    Object.keys(oldConfigToNewConfig).forEach(section => {
+        if (typeof oldValue[section] !== 'object') {
+            newValue = set(newValue, section, {});
+        }
 
-    // Translate the old config properties into the new config.p2p properties.
-    for (const [ oldKey, newKey ]
-            of [
-                [ 'backToP2PDelay', 'backToP2PDelay' ],
-                [ 'enableP2P', 'enabled' ],
-                [ 'p2pStunServers', 'stunServers' ]
-            ]) {
+        for (const [ oldKey, newKey ] of oldConfigToNewConfig[section]) {
+            if (oldKey in newValue && !(newKey in newValue[section])) {
+                const v = newValue[oldKey];
 
-    /* eslint-enable indent */
+                // Do not modify oldValue.
+                if (newValue === oldValue) {
+                    newValue = {
+                        ...newValue
+                    };
+                }
+                delete newValue[oldKey];
 
-        if (oldKey in newValue && !(newKey in newValue.p2p)) {
-            const v = newValue[oldKey];
-
-            // Do not modify oldValue.
-            if (newValue === oldValue) {
-                newValue = {
-                    ...newValue
+                // Do not modify the section because it may be from oldValue
+                // i.e. do not modify oldValue.
+                newValue[section] = {
+                    ...newValue[section],
+                    [newKey]: v
                 };
             }
-            delete newValue[oldKey];
-
-            // Do not modify p2p because it may be from oldValue i.e. do not
-            // modify oldValue.
-            newValue.p2p = {
-                ...newValue.p2p,
-                [newKey]: v
-            };
         }
-    }
+    });
 
     return newValue;
 }

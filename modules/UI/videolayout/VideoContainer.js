@@ -167,22 +167,6 @@ function getCameraVideoPosition( // eslint-disable-line max-params
 }
 
 /**
- * Returns an array of the video horizontal and vertical indents.
- * Centers horizontally and top aligns vertically.
- *
- * @return an array with 2 elements, the horizontal indent and the vertical
- * indent
- */
-function getDesktopVideoPosition(videoWidth, videoHeight, videoSpaceWidth) {
-    const horizontalIndent = (videoSpaceWidth - videoWidth) / 2;
-
-    const verticalIndent = 0;// Top aligned
-
-    return { horizontalIndent,
-        verticalIndent };
-}
-
-/**
  * Container for user video.
  */
 export class VideoContainer extends LargeContainer {
@@ -215,8 +199,6 @@ export class VideoContainer extends LargeContainer {
         this.localFlipX = true;
         this.emitter = emitter;
         this.resizeContainer = resizeContainer;
-
-        this.isVisible = false;
 
         /**
          * Whether the background should fit the height of the container
@@ -267,7 +249,7 @@ export class VideoContainer extends LargeContainer {
          */
         this.$wrapperParent = this.$wrapper.parent();
 
-        this.avatarHeight = $('#dominantSpeakerAvatar').height();
+        this.avatarHeight = $('#dominantSpeakerAvatarContainer').height();
 
         const onPlayingCallback = function(event) {
             if (typeof resizeContainer === 'function') {
@@ -368,23 +350,23 @@ export class VideoContainer extends LargeContainer {
      * @returns {{horizontalIndent, verticalIndent}}
      */
     getVideoPosition(width, height, containerWidth, containerHeight) {
+        let containerWidthToUse = containerWidth;
+
         /* eslint-enable max-params */
         if (this.stream && this.isScreenSharing()) {
-            let availableContainerWidth = containerWidth;
-
             if (interfaceConfig.VERTICAL_FILMSTRIP) {
-                availableContainerWidth -= Filmstrip.getFilmstripWidth();
+                containerWidthToUse -= Filmstrip.getFilmstripWidth();
             }
 
-            return getDesktopVideoPosition(width,
+            return getCameraVideoPosition(width,
                 height,
-                availableContainerWidth,
+                containerWidthToUse,
                 containerHeight);
         }
 
         return getCameraVideoPosition(width,
                 height,
-                containerWidth,
+                containerWidthToUse,
                 containerHeight);
 
     }
@@ -410,7 +392,7 @@ export class VideoContainer extends LargeContainer {
      */
     _positionParticipantStatus($element) {
         if (this.avatarDisplayed) {
-            const $avatarImage = $('#dominantSpeakerAvatar');
+            const $avatarImage = $('#dominantSpeakerAvatarContainer');
 
             $element.css(
                 'top',
@@ -603,17 +585,11 @@ export class VideoContainer extends LargeContainer {
      * TODO: refactor this since Temasys is no longer supported.
      */
     show() {
-        // its already visible
-        if (this.isVisible) {
-            return Promise.resolve();
-        }
-
         return new Promise(resolve => {
             this.$wrapperParent.css('visibility', 'visible').fadeTo(
                 FADE_DURATION_MS,
                 1,
                 () => {
-                    this.isVisible = true;
                     resolve();
                 }
             );
@@ -628,15 +604,9 @@ export class VideoContainer extends LargeContainer {
         // hide its avatar
         this.showAvatar(false);
 
-        // its already hidden
-        if (!this.isVisible) {
-            return Promise.resolve();
-        }
-
         return new Promise(resolve => {
             this.$wrapperParent.fadeTo(FADE_DURATION_MS, 0, () => {
                 this.$wrapperParent.css('visibility', 'hidden');
-                this.isVisible = false;
                 resolve();
             });
         });

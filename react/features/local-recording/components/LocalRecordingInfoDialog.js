@@ -1,8 +1,8 @@
-/* @flow */
+// @flow
 
 import moment from 'moment';
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+import type { Dispatch } from 'redux';
 
 import { Dialog } from '../../base/dialog';
 import { translate } from '../../base/i18n';
@@ -10,6 +10,7 @@ import {
     PARTICIPANT_ROLE,
     getLocalParticipant
 } from '../../base/participants';
+import { connect } from '../../base/redux';
 
 import { statsUpdate } from '../actions';
 import { recordingController } from '../controller';
@@ -24,7 +25,7 @@ type Props = {
     /**
      * Redux store dispatch function.
      */
-    dispatch: Dispatch<*>,
+    dispatch: Dispatch<any>,
 
     /**
      * Current encoding format.
@@ -149,7 +150,7 @@ class LocalRecordingInfoDialog extends Component<Props, State> {
 
         return (
             <Dialog
-                cancelTitleKey = { 'dialog.close' }
+                cancelKey = { 'dialog.close' }
                 submitDisabled = { true }
                 titleKey = 'localRecording.dialogTitle'>
                 <div className = 'localrec-control'>
@@ -288,7 +289,7 @@ class LocalRecordingInfoDialog extends Component<Props, State> {
     }
 
     /**
-     * Renders the moderator-only controls, i.e. stats of all users and the
+     * Renders the moderator-only controls: The stats of all users and the
      * action links.
      *
      * @private

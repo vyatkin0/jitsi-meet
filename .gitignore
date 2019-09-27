@@ -35,6 +35,7 @@ xcuserdata
 DerivedData
 *.hmap
 *.ipa
+*.dSYM.zip
 *.xcuserstate
 project.xcworkspace
 
@@ -69,10 +70,23 @@ buck-out/
 */fastlane/Preview.html
 */fastlane/screenshots
 
-# Bundle artifact
+# Build artifacts
 *.jsbundle
+*.framework
+android/app/debug
+android/app/release
 
 # precommit-hook
 .jshintignore
 .jshintrc
+
+# VSCode files
+android/.project
+android/.settings/org.eclipse.buildship.core.prefs
+
+# Secrets
+android/app/dropbox.key
+android/app/google-services.json
+ios/app/dropbox.key
+ios/app/GoogleService-Info.plist
 

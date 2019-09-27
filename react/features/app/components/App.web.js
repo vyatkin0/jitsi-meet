@@ -3,9 +3,14 @@
 import { AtlasKitThemeProvider } from '@atlaskit/theme';
 import React from 'react';
 
+import { DialogContainer } from '../../base/dialog';
+import '../../base/user-interaction';
 import '../../base/responsive-ui';
 import '../../chat';
+import '../../external-api';
+import '../../power-monitor';
 import '../../room-lock';
+import '../../talk-while-muted';
 import '../../video-layout';
 
 import { AbstractApp } from './AbstractApp';
@@ -17,16 +22,6 @@ import { AbstractApp } from './AbstractApp';
  */
 export class App extends AbstractApp {
     /**
-     * Gets a Location object from the window with information about the current
-     * location of the document.
-     *
-     * @inheritdoc
-     */
-    getWindowLocation() {
-        return window.location;
-    }
-
-    /**
      * Overrides the parent method to inject {@link AtlasKitThemeProvider} as
      * the top most component.
      *
@@ -36,6 +31,19 @@ export class App extends AbstractApp {
         return (
             <AtlasKitThemeProvider mode = 'dark'>
                 { super._createMainElement(component, props) }
+            </AtlasKitThemeProvider>
+        );
+    }
+
+    /**
+     * Renders the platform specific dialog container.
+     *
+     * @returns {React$Element}
+     */
+    _renderDialogContainer() {
+        return (
+            <AtlasKitThemeProvider mode = 'dark'>
+                <DialogContainer />
             </AtlasKitThemeProvider>
         );
     }

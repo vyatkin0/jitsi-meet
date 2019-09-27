@@ -7,10 +7,8 @@ import { Provider } from 'react-redux';
 
 import { JitsiTrackEvents } from '../../../react/features/base/lib-jitsi-meet';
 import { VideoTrack } from '../../../react/features/base/media';
-import {
-    getAvatarURLByParticipantId
-} from '../../../react/features/base/participants';
 import { updateSettings } from '../../../react/features/base/settings';
+import { getLocalVideoTrack } from '../../../react/features/base/tracks';
 import { shouldDisplayTileView } from '../../../react/features/video-layout';
 /* eslint-enable no-unused-vars */
 
@@ -31,7 +29,7 @@ function LocalVideo(VideoLayout, emitter, streamEndedCallback) {
 
     this.localVideoId = null;
     this.bindHoverHandler();
-    if (config.enableLocalVideoFlip) {
+    if (!config.disableLocalVideoFlip) {
         this._buildContextMenu();
     }
     this.isLocal = true;
@@ -49,18 +47,17 @@ function LocalVideo(VideoLayout, emitter, streamEndedCallback) {
     SmallVideo.call(this, VideoLayout);
 
     // Set default display name.
-    this.setDisplayName();
+    this.updateDisplayName();
 
     // Initialize the avatar display with an avatar url selected from the redux
     // state. Redux stores the local user with a hardcoded participant id of
     // 'local' if no id has been assigned yet.
-    this.avatarChanged(
-        getAvatarURLByParticipantId(APP.store.getState(), this.id));
+    this.initializeAvatar();
 
     this.addAudioLevelIndicator();
     this.updateIndicators();
 
-    this.container.onclick = this._onContainerClick.bind(this);
+    this.container.onclick = this._onContainerClick;
 }
 
 LocalVideo.prototype = Object.create(SmallVideo.prototype);
@@ -85,9 +82,11 @@ LocalVideo.prototype.createContainer = function() {
 };
 
 /**
- * Sets the display name for the given video span id.
+ * Triggers re-rendering of the display name using current instance state.
+ *
+ * @returns {void}
  */
-LocalVideo.prototype.setDisplayName = function(displayName) {
+LocalVideo.prototype.updateDisplayName = function() {
     if (!this.container) {
         logger.warn(
                 `Unable to set displayName - ${this.videoSpanId
@@ -96,9 +95,8 @@ LocalVideo.prototype.setDisplayName = function(displayName) {
         return;
     }
 
-    this.updateDisplayName({
+    this._renderDisplayName({
         allowEditing: APP.store.getState()['features/base/jwt'].isGuest,
-        displayName,
         displayNameSuffix: interfaceConfig.DEFAULT_LOCAL_DISPLAY_NAME,
         elementID: 'localDisplayName',
         participantID: this.id
@@ -253,53 +251,19 @@ LocalVideo.prototype.updateDOMLocation = function() {
 };
 
 /**
- * Callback invoked when the thumbnail is clicked. Will directly call
- * VideoLayout to handle thumbnail click if certain elements have not been
- * clicked.
- *
- * @param {MouseEvent} event - The click event to intercept.
- * @private
- * @returns {void}
- */
-LocalVideo.prototype._onContainerClick = function(event) {
-    // TODO Checking the classes is a workround to allow events to bubble into
-    // the DisplayName component if it was clicked. React's synthetic events
-    // will fire after jQuery handlers execute, so stop propogation at this
-    // point will prevent DisplayName from getting click events. This workaround
-    // should be removeable once LocalVideo is a React Component because then
-    // the components share the same eventing system.
-    const $source = $(event.target || event.srcElement);
-    const { classList } = event.target;
-
-    const clickedOnDisplayName
-        = $source.parents('.displayNameContainer').length > 0;
-    const clickedOnPopover = $source.parents('.popover').length > 0
-            || classList.contains('popover');
-    const ignoreClick = clickedOnDisplayName
-        || clickedOnPopover
-        || shouldDisplayTileView(APP.store.getState());
-
-    if (event.stopPropagation && !ignoreClick) {
-        event.stopPropagation();
-    }
-
-    if (!ignoreClick) {
-        this._togglePin();
-    }
-};
-
-/**
  * Renders the React Element for displaying video in {@code LocalVideo}.
  *
  */
 LocalVideo.prototype._updateVideoElement = function() {
     const localVideoContainer = document.getElementById('localVideoWrapper');
+    const videoTrack
+        = getLocalVideoTrack(APP.store.getState()['features/base/tracks']);
 
     ReactDOM.render(
         <Provider store = { APP.store }>
             <VideoTrack
                 id = 'localVideo_container'
-                videoTrack = {{ jitsiTrack: this.videoStream }} />
+                videoTrack = { videoTrack } />
         </Provider>,
         localVideoContainer
     );

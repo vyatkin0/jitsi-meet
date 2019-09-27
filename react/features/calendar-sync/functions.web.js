@@ -1,31 +1,41 @@
 // @flow
 
+import {
+    clearCalendarIntegration,
+    setCalendarError,
+    setLoadingCalendarEvents
+} from './actions';
 export * from './functions.any';
 
 import {
     CALENDAR_TYPE,
+    ERRORS,
     FETCH_END_DAYS,
     FETCH_START_DAYS
 } from './constants';
 import { _updateCalendarEntries } from './functions';
 import { googleCalendarApi } from './web/googleCalendar';
 import { microsoftCalendarApi } from './web/microsoftCalendar';
+import { toState } from '../base/redux';
 
-const logger = require('jitsi-meet-logger').getLogger(__filename);
-
-declare var config: Object;
+import logger from './logger';
 
 /**
  * Determines whether the calendar feature is enabled by the web.
  *
+ * @param {Function|Object} stateful - The redux store or {@code getState}
+ * function.
  * @returns {boolean} If the app has enabled the calendar feature, {@code true};
  * otherwise, {@code false}.
  */
-export function isCalendarEnabled() {
-    return Boolean(
-        config.enableCalendarIntegration
-            && (config.googleApiApplicationClientID
-                || config.microsoftApiApplicationClientID));
+export function isCalendarEnabled(stateful: Function | Object) {
+    const {
+        enableCalendarIntegration,
+        googleApiApplicationClientID,
+        microsoftApiApplicationClientID
+    } = toState(stateful)['features/base/config'] || {};
+
+    return Boolean(enableCalendarIntegration && (googleApiApplicationClientID || microsoftApiApplicationClientID));
 }
 
 /* eslint-disable no-unused-vars */
@@ -41,9 +51,9 @@ export function isCalendarEnabled() {
  * @returns {void}
  */
 export function _fetchCalendarEntries(
-        store,
-        maybePromptForPermission,
-        forcePermission) {
+        store: Object,
+        maybePromptForPermission: boolean,
+        forcePermission: ?boolean) {
     /* eslint-enable no-unused-vars */
     const { dispatch, getState } = store;
 
@@ -56,6 +66,8 @@ export function _fetchCalendarEntries(
         return;
     }
 
+    dispatch(setLoadingCalendarEvents(true));
+
     dispatch(integration.load())
         .then(() => dispatch(integration._isSignedIn()))
         .then(signedIn => {
@@ -63,7 +75,9 @@ export function _fetchCalendarEntries(
                 return Promise.resolve();
             }
 
-            return Promise.reject('Not authorized, please sign in!');
+            return Promise.reject({
+                error: ERRORS.AUTH_FAILED
+            });
         })
         .then(() => dispatch(integration.getCalendarEntries(
             FETCH_START_DAYS, FETCH_END_DAYS)))
@@ -71,8 +85,18 @@ export function _fetchCalendarEntries(
             dispatch,
             getState
         }, events))
-        .catch(error =>
-            logger.error('Error fetching calendar.', error));
+        .then(() => {
+            dispatch(setCalendarError());
+        }, error => {
+            logger.error('Error fetching calendar.', error);
+
+            if (error.error === ERRORS.AUTH_FAILED) {
+                dispatch(clearCalendarIntegration());
+            }
+
+            dispatch(setCalendarError(error));
+        })
+        .then(() => dispatch(setLoadingCalendarEvents(false)));
 }
 
 /**

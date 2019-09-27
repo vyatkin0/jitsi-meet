@@ -1,7 +1,5 @@
 // @flow
 
-const logger = require('jitsi-meet-logger').getLogger(__filename);
-
 /**
  * The app linking scheme.
  * TODO: This should be read from the manifest files later.
@@ -41,7 +39,7 @@ const _URI_PATH_PATTERN = '([^?#]*)';
  *
  * @type {string}
  */
-export const URI_PROTOCOL_PATTERN = '([a-z][a-z0-9\\.\\+-]*:)';
+export const URI_PROTOCOL_PATTERN = '^([a-z][a-z0-9\\.\\+-]*:)';
 
 /**
  * Excludes/removes certain characters from a specific room (name) which are
@@ -58,49 +56,6 @@ function _fixRoom(room: ?string) {
 }
 
 /**
- * Fixes the hier-part of a specific URI (string) so that the URI is well-known.
- * For example, certain Jitsi Meet deployments are not conventional but it is
- * possible to translate their URLs into conventional.
- *
- * @param {string} uri - The URI (string) to fix the hier-part of.
- * @private
- * @returns {string}
- */
-function _fixURIStringHierPart(uri) {
-    // Rewrite the specified URL in order to handle special cases such as
-    // hipchat.com and enso.me which do not follow the common pattern of most
-    // Jitsi Meet deployments.
-
-    // hipchat.com
-    let regex
-        = new RegExp(
-            `^${URI_PROTOCOL_PATTERN}//hipchat\\.com/video/call/`,
-            'gi');
-    let match: Array<string> | null = regex.exec(uri);
-
-    if (!match) {
-        // enso.me
-        regex
-            = new RegExp(
-                `^${URI_PROTOCOL_PATTERN}//enso\\.me/(?:call|meeting)/`,
-                'gi');
-        match = regex.exec(uri);
-    }
-    if (match) {
-        /* eslint-disable no-param-reassign, prefer-template */
-
-        uri
-            = match[1] /* protocol */
-                + '//enso.hipchat.me/'
-                + uri.substring(regex.lastIndex); /* room (name) */
-
-        /* eslint-enable no-param-reassign, prefer-template */
-    }
-
-    return uri;
-}
-
-/**
  * Fixes the scheme part of a specific URI (string) so that it contains a
  * well-known scheme such as HTTP(S). For example, the mobile app implements an
  * app-specific URI scheme in addition to Universal Links. The app-specific
@@ -114,7 +69,7 @@ function _fixURIStringHierPart(uri) {
  * @returns {string}
  */
 function _fixURIStringScheme(uri: string) {
-    const regex = new RegExp(`^${URI_PROTOCOL_PATTERN}+`, 'gi');
+    const regex = new RegExp(`${URI_PROTOCOL_PATTERN}+`, 'gi');
     const match: Array<string> | null = regex.exec(uri);
 
     if (match) {
@@ -176,7 +131,7 @@ function _objectToURLParamsArray(obj = {}) {
             params.push(
                 `${key}=${encodeURIComponent(JSON.stringify(obj[key]))}`);
         } catch (e) {
-            logger.warn(`Error encoding ${key}: ${e}`);
+            console.warn(`Error encoding ${key}: ${e}`);
         }
     }
 
@@ -218,7 +173,7 @@ export function parseStandardURIString(str: string) {
     str = str.replace(/\s/g, '');
 
     // protocol
-    regex = new RegExp(`^${URI_PROTOCOL_PATTERN}`, 'gi');
+    regex = new RegExp(URI_PROTOCOL_PATTERN, 'gi');
     match = regex.exec(str);
     if (match) {
         obj.protocol = match[1].toLowerCase();
@@ -300,7 +255,15 @@ export function parseStandardURIString(str: string) {
  * references a Jitsi Meet resource (location).
  * @public
  * @returns {{
- *     room: (string|undefined)
+ *     contextRoot: string,
+ *     hash: string,
+ *     host: string,
+ *     hostname: string,
+ *     pathname: string,
+ *     port: string,
+ *     protocol: string,
+ *     room: (string|undefined),
+ *     search: string
  * }}
  */
 export function parseURIString(uri: ?string) {
@@ -308,9 +271,7 @@ export function parseURIString(uri: ?string) {
         return undefined;
     }
 
-    const obj
-        = parseStandardURIString(
-            _fixURIStringHierPart(_fixURIStringScheme(uri)));
+    const obj = parseStandardURIString(_fixURIStringScheme(uri));
 
     // Add the properties that are specific to a Jitsi Meet resource (location)
     // such as contextRoot, room:
@@ -414,7 +375,19 @@ export function toURLString(obj: ?(Object | string)): ?string {
  * {@code Object}.
  */
 export function urlObjectToString(o: Object): ?string {
-    const url = parseStandardURIString(_fixURIStringScheme(o.url || ''));
+    // First normalize the given url. It come as o.url or split into o.serverURL
+    // and o.room.
+    let tmp;
+
+    if (o.serverURL && o.room) {
+        tmp = new URL(o.room, o.serverURL).toString();
+    } else if (o.room) {
+        tmp = o.room;
+    } else {
+        tmp = o.url || '';
+    }
+
+    const url = parseStandardURIString(_fixURIStringScheme(tmp));
 
     // protocol
     if (!url.protocol) {
@@ -494,16 +467,16 @@ export function urlObjectToString(o: Object): ?string {
 
     let { hash } = url;
 
-    for (const configName of [ 'config', 'interfaceConfig' ]) {
+    for (const urlPrefix of [ 'config', 'interfaceConfig', 'devices' ]) {
         const urlParamsArray
             = _objectToURLParamsArray(
-                o[`${configName}Overwrite`]
-                    || o[configName]
-                    || o[`${configName}Override`]);
+                o[`${urlPrefix}Overwrite`]
+                    || o[urlPrefix]
+                    || o[`${urlPrefix}Override`]);
 
         if (urlParamsArray.length) {
             let urlParamsString
-                = `${configName}.${urlParamsArray.join(`&${configName}.`)}`;
+                = `${urlPrefix}.${urlParamsArray.join(`&${urlPrefix}.`)}`;
 
             if (hash.length) {
                 urlParamsString = `&${urlParamsString}`;

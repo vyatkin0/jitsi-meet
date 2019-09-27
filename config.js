@@ -18,9 +18,6 @@ var config = {
         // XMPP domain.
         domain: 'jitsi-meet.example.com',
 
-        // XMPP MUC domain. FIXME: use XEP-0030 to discover it.
-        muc: 'conference.jitsi-meet.example.com'
-
         // When using authentication, domain for guest users.
         // anonymousdomain: 'guest.example.com',
 
@@ -35,6 +32,9 @@ var config = {
 
         // Focus component domain. Defaults to focus.<domain>.
         // focus: 'focus.jitsi-meet.example.com',
+
+        // XMPP MUC domain. FIXME: use XEP-0030 to discover it.
+        muc: 'conference.jitsi-meet.example.com'
     },
 
     // BOSH URL. FIXME: use XEP-0156 to discover it.
@@ -90,6 +90,10 @@ var config = {
     // applied locally. FIXME: having these 2 options is confusing.
     // startWithAudioMuted: false,
 
+    // Enabling it (with #params) will disable local audio output of remote
+    // participants and to enable it back a reload is needed.
+    // startSilent: false
+
     // Video
 
     // Sets the preferred resolution (height) for local video. Defaults to 720.
@@ -119,10 +123,6 @@ var config = {
     // are requested again.
     // enableLayerSuspension: false,
 
-    // Suspend sending video if bandwidth estimation is too low. This may cause
-    // problems with audio playback. Disabled until these are fixed.
-    disableSuspendVideo: true,
-
     // Every participant after the Nth will start video muted.
     // startVideoMuted: 10,
 
@@ -146,7 +146,7 @@ var config = {
     desktopSharingChromeExtId: null,
 
     // Whether desktop sharing should be disabled on Chrome.
-    desktopSharingChromeDisabled: true,
+    // desktopSharingChromeDisabled: false,
 
     // The media sources to use when using screen sharing with the Chrome
     // extension.
@@ -156,7 +156,7 @@ var config = {
     desktopSharingChromeMinExtVersion: '0.1',
 
     // Whether desktop sharing should be disabled on Firefox.
-    desktopSharingFirefoxDisabled: false,
+    // desktopSharingFirefoxDisabled: false,
 
     // Optional desktop sharing frame rate options. Default value: min:5, max:5.
     // desktopSharingFrameRate: {
@@ -171,6 +171,24 @@ var config = {
 
     // Whether to enable file recording or not.
     // fileRecordingsEnabled: false,
+    // Enable the dropbox integration.
+    // dropbox: {
+    //     appKey: '<APP_KEY>' // Specify your app key here.
+    //     // A URL to redirect the user to, after authenticating
+    //     // by default uses:
+    //     // 'https://jitsi-meet.example.com/static/oauth.html'
+    //     redirectURI:
+    //          'https://jitsi-meet.example.com/subfolder/static/oauth.html'
+    // },
+    // When integrations like dropbox are enabled only that will be shown,
+    // by enabling fileRecordingsServiceEnabled, we show both the integrations
+    // and the generic recording service (its configuration and storage type
+    // depends on jibri configuration)
+    // fileRecordingsServiceEnabled: false,
+    // Whether to show the possibility to share file recording with other people
+    // (e.g. meeting participants), based on the actual implementation
+    // on the backend.
+    // fileRecordingsServiceSharingEnabled: false,
 
     // Whether to enable live streaming or not.
     // liveStreamingEnabled: false,
@@ -178,6 +196,9 @@ var config = {
     // Transcription (in interface_config,
     // subtitles and buttons can be configured)
     // transcribingEnabled: false,
+
+    // Enables automatic turning on captions when recording is started
+    // autoCaptionOnRecord: false,
 
     // Misc
 
@@ -237,10 +258,6 @@ var config = {
     // Disable hiding of remote thumbnails when in a 1-on-1 conference call.
     // disable1On1Mode: false,
 
-    // The minimum value a video's height (or width, whichever is smaller) needs
-    // to be in order to be considered high-definition.
-    minHDHeight: 540,
-
     // Default language for the user interface.
     // defaultLanguage: 'en',
 
@@ -251,6 +268,13 @@ var config = {
 
     // Whether or not some features are checked based on token.
     // enableFeaturesBasedOnToken: false,
+
+    // Enable lock room for all moderators, even when userRolesBasedOnToken is enabled and participants are guests.
+    // lockRoomGuestEnabled: false,
+
+    // When enabled the password used for locking a room is restricted to up to the number of digits specified
+    // roomPasswordNumberOfDigits: 10,
+    // default: roomPasswordNumberOfDigits: false,
 
     // Message to show the users. Example: 'The service will be down for
     // maintenance at 01:00 AM GMT,
@@ -334,14 +358,19 @@ var config = {
         // backToP2PDelay: 5
     },
 
-    // A list of scripts to load as lib-jitsi-meet "analytics handlers".
-    // analyticsScriptUrls: [
-    //      "libs/analytics-ga.js", // google-analytics
-    //      "https://example.com/my-custom-analytics.js"
-    // ],
+    analytics: {
+        // The Google Analytics Tracking ID:
+        // googleAnalyticsTrackingId: 'your-tracking-id-UA-123456-1'
 
-    // The Google Analytics Tracking ID
-    // googleAnalyticsTrackingId = 'your-tracking-id-here-UA-123456-1',
+        // The Amplitude APP Key:
+        // amplitudeAPPKey: '<APP_KEY>'
+
+        // Array of script URLs to load as lib-jitsi-meet "analytics handlers".
+        // scriptURLs: [
+        //      "libs/analytics-ga.min.js", // google-analytics
+        //      "https://example.com/my-custom-analytics.js"
+        // ],
+    },
 
     // Information about the jitsi-meet instance we are connecting to, including
     // the user region as seen by the server.
@@ -381,6 +410,21 @@ var config = {
     //   analyticsInterval: 60000,
     //   }
 
+    // If set, will attempt to use the provided video input device label when
+    // triggering a screenshare, instead of proceeding through the normal flow
+    // for obtaining a desktop stream.
+    // NOTE: This option is experimental and is currently intended for internal
+    // use only.
+    // _desktopSharingSourceDevice: 'sample-id-or-label'
+
+    // If true, any checks to handoff to another application will be prevented
+    // and instead the app will continue to display in the current browser.
+    // disableDeepLinking: false
+
+    // A property to disable the right click context menu for localVideo
+    // the menu has option to flip the locally seen video for local presentations
+    // disableLocalVideoFlip: false
+
     // List of undocumented settings used in jitsi-meet
     /**
      _immediateReloadThreshold
@@ -395,7 +439,6 @@ var config = {
      dialOutCodesUrl
      disableRemoteControl
      displayJids
-     enableLocalVideoFlip
      etherpad_base
      externalConnectUrl
      firefox_fake_device

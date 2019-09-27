@@ -2,6 +2,7 @@
 
 import { i18next } from '../../base/i18n';
 
+import logger from '../logger';
 import {
     FlacAdapter,
     OggAdapter,
@@ -9,8 +10,6 @@ import {
     downloadBlob
 } from '../recording';
 import { sessionManager } from '../session';
-
-const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 /**
  * XMPP command for signaling the start of local recording to all clients.
@@ -221,7 +220,7 @@ class RecordingController {
     /**
      * Registers listeners for XMPP events.
      *
-     * @param {JitsiConference} conference - {@code JitsiConference} instance.
+     * @param {JitsiConference} conference - A {@code JitsiConference} instance.
      * @returns {void}
      */
     registerEvents(conference: Object) {
@@ -633,7 +632,7 @@ class RecordingController {
         }
 
         /* eslint-disable */
-        return (Promise.resolve(): Promise<void>); 
+        return (Promise.resolve(): Promise<void>);
         // FIXME: better ways to satisfy flow and ESLint at the same time?
         /* eslint-enable */
 

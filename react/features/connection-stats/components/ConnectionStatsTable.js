@@ -1,108 +1,120 @@
-import PropTypes from 'prop-types';
+/* @flow */
+
 import React, { Component } from 'react';
 
 import { translate } from '../../base/i18n';
+
+/**
+ * The type of the React {@code Component} props of
+ * {@link ConnectionStatsTable}.
+ */
+type Props = {
+
+    /**
+     * Statistics related to bandwidth.
+     * {{
+     *     download: Number,
+     *     upload: Number
+     * }}
+     */
+    bandwidth: Object,
+
+    /**
+     * Statistics related to bitrate.
+     * {{
+     *     download: Number,
+     *     upload: Number
+     * }}
+     */
+    bitrate: Object,
+
+    /**
+     * The number of bridges (aka media servers) currently used in the
+     * conference.
+     */
+    bridgeCount: number,
+
+    /**
+     * A message describing the connection quality.
+     */
+    connectionSummary: string,
+
+    /**
+     * The end-to-end round-trip-time.
+     */
+    e2eRtt: number,
+
+    /**
+     * Statistics related to frame rates for each ssrc.
+     * {{
+     *     [ ssrc ]: Number
+     * }}
+     */
+    framerate: Object,
+
+    /**
+     * Whether or not the statistics are for local video.
+     */
+    isLocalVideo: boolean,
+
+    /**
+     * Callback to invoke when the show additional stats link is clicked.
+     */
+    onShowMore: Function,
+
+    /**
+     * Statistics related to packet loss.
+     * {{
+     *     download: Number,
+     *     upload: Number
+     * }}
+     */
+    packetLoss: Object,
+
+    /**
+     * The region that we think the client is in.
+     */
+    region: string,
+
+    /**
+     * Statistics related to display resolutions for each ssrc.
+     * {{
+     *     [ ssrc ]: {
+     *         height: Number,
+     *         width: Number
+     *     }
+     * }}
+     */
+    resolution: Object,
+
+    /**
+     * The region of the media server that we are connected to.
+     */
+    serverRegion: string,
+
+    /**
+     * Whether or not additional stats about bandwidth and transport should be
+     * displayed. Will not display even if true for remote participants.
+     */
+    shouldShowMore: boolean,
+
+    /**
+     * Invoked to obtain translated strings.
+     */
+    t: Function,
+
+    /**
+     * Statistics related to transports.
+     */
+    transport: Array<Object>
+};
 
 /**
  * React {@code Component} for displaying connection statistics.
  *
  * @extends Component
  */
-class ConnectionStatsTable extends Component {
-    /**
-     * {@code ConnectionStatsTable} component's property types.
-     *
-     * @static
-     */
-    static propTypes = {
-        /**
-         * Statistics related to bandwidth.
-         * {{
-         *     download: Number,
-         *     upload: Number
-         * }}
-         */
-        bandwidth: PropTypes.object,
-
-        /**
-         * Statistics related to bitrate.
-         * {{
-         *     download: Number,
-         *     upload: Number
-         * }}
-         */
-        bitrate: PropTypes.object,
-
-        /**
-         * A message describing the connection quality.
-         */
-        connectionSummary: PropTypes.string,
-
-        /**
-         * The end-to-end round-trip-time.
-         */
-        e2eRtt: PropTypes.number,
-
-        /**
-         * Statistics related to frame rates for each ssrc.
-         * {{
-         *     [ ssrc ]: Number
-         * }}
-         */
-        framerate: PropTypes.object,
-
-        /**
-         * Whether or not the statistics are for local video.
-         */
-        isLocalVideo: PropTypes.bool,
-
-        /**
-         * Callback to invoke when the show additional stats link is clicked.
-         */
-        onShowMore: PropTypes.func,
-
-        /**
-         * Statistics related to packet loss.
-         * {{
-         *     download: Number,
-         *     upload: Number
-         * }}
-         */
-        packetLoss: PropTypes.object,
-
-        /**
-         * The region.
-         */
-        region: PropTypes.string,
-
-        /**
-         * Statistics related to display resolutions for each ssrc.
-         * {{
-         *     [ ssrc ]: {
-         *         height: Number,
-         *         width: Number
-         *     }
-         * }}
-         */
-        resolution: PropTypes.object,
-
-        /**
-         * Whether or not additional stats about bandwidth and transport should
-         * be displayed. Will not display even if true for remote participants.
-         */
-        shouldShowMore: PropTypes.bool,
-
-        /**
-         * Invoked to obtain translated strings.
-         */
-        t: PropTypes.func,
-
-        /**
-         * Statistics related to transports.
-         */
-        transport: PropTypes.array
-    };
-
+class ConnectionStatsTable extends Component<Props> {
     /**
      * Implements React's {@link Component#render()}.
      *
@@ -124,7 +136,7 @@ class ConnectionStatsTable extends Component {
 
     /**
      * Creates a table as ReactElement that will display additional statistics
-     * related to bandwidth and transport.
+     * related to bandwidth and transport for the local user.
      *
      * @private
      * @returns {ReactElement}
@@ -135,6 +147,7 @@ class ConnectionStatsTable extends Component {
                 <tbody>
                     { this._renderBandwidth() }
                     { this._renderTransport() }
+                    { this._renderRegion() }
                 </tbody>
             </table>
         );
@@ -226,12 +239,8 @@ class ConnectionStatsTable extends Component {
      * @private
      */
     _renderE2eRtt() {
-        const { e2eRtt, region, t } = this.props;
-        let str = e2eRtt ? `${e2eRtt.toFixed(0)}ms` : 'N/A';
-
-        if (region) {
-            str += ` (${region})`;
-        }
+        const { e2eRtt, t } = this.props;
+        const str = e2eRtt ? `${e2eRtt.toFixed(0)}ms` : 'N/A';
 
         return (
             <tr>
@@ -239,6 +248,61 @@ class ConnectionStatsTable extends Component {
                     <span>{ t('connectionindicator.e2e_rtt') }</span>
                 </td>
                 <td>{ str }</td>
+            </tr>
+        );
+    }
+
+    /**
+     * Creates a table row as a ReactElement for displaying the "connected to"
+     * information.
+     *
+     * @returns {ReactElement}
+     * @private
+     */
+    _renderRegion() {
+        const { region, serverRegion, t } = this.props;
+        let str = serverRegion;
+
+        if (!serverRegion) {
+            return;
+        }
+
+
+        if (region && serverRegion && region !== serverRegion) {
+            str += ` from ${region}`;
+        }
+
+        return (
+            <tr>
+                <td>
+                    <span>{ t('connectionindicator.connectedTo') }</span>
+                </td>
+                <td>{ str }</td>
+            </tr>
+        );
+    }
+
+    /**
+     * Creates a table row as a ReactElement for displaying the "bridge count"
+     * information.
+     *
+     * @returns {*}
+     * @private
+     */
+    _renderBridgeCount() {
+        const { bridgeCount, t } = this.props;
+
+        // 0 is valid, but undefined/null/NaN aren't.
+        if (!bridgeCount && bridgeCount !== 0) {
+            return;
+        }
+
+        return (
+            <tr>
+                <td>
+                    <span>{ t('connectionindicator.bridgeCount') }</span>
+                </td>
+                <td>{ bridgeCount }</td>
             </tr>
         );
     }
@@ -373,8 +437,10 @@ class ConnectionStatsTable extends Component {
                     { this._renderBitrate() }
                     { this._renderPacketLoss() }
                     { isRemoteVideo ? this._renderE2eRtt() : null }
+                    { isRemoteVideo ? this._renderRegion() : null }
                     { this._renderResolution() }
                     { this._renderFrameRate() }
+                    { isRemoteVideo ? null : this._renderBridgeCount() }
                 </tbody>
             </table>
         );
@@ -449,12 +515,14 @@ class ConnectionStatsTable extends Component {
                 || transport[0].remoteCandidateType === 'relay';
         }
 
-        let additionalData = null;
+        const additionalData = [];
 
         if (isP2P) {
-            additionalData = isTURN
-                ? <span>{ t('connectionindicator.turn') }</span>
-                : <span>{ t('connectionindicator.peer_to_peer') }</span>;
+            additionalData.push(
+                <span> (p2p)</span>);
+        }
+        if (isTURN) {
+            additionalData.push(<span> (turn)</span>);
         }
 
         // First show remote statistics, then local, and then transport type.
@@ -509,7 +577,7 @@ class ConnectionStatsTable extends Component {
      * @private
      * @returns {ReactElement}
      */
-    _renderTransportTableRow(config) {
+    _renderTransportTableRow(config: Object) {
         const { additionalData, data, key, label } = config;
 
         return (

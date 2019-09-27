@@ -1,5 +1,4 @@
-/* global $, APP */
-import { shouldDisplayTileView } from '../../../react/features/video-layout';
+/* global $ */
 
 import SmallVideo from '../videolayout/SmallVideo';
 
@@ -16,11 +15,13 @@ export default function SharedVideoThumb(participant, videoType, VideoLayout) {
     this.videoSpanId = 'sharedVideoContainer';
     this.container = this.createContainer(this.videoSpanId);
     this.$container = $(this.container);
-    this.container.onclick = this.videoClick.bind(this);
+
     this.bindHoverHandler();
     SmallVideo.call(this, VideoLayout);
     this.isVideoMuted = true;
-    this.setDisplayName(participant.name);
+    this.updateDisplayName();
+
+    this.container.onclick = this._onContainerClick;
 }
 SharedVideoThumb.prototype = Object.create(SmallVideo.prototype);
 SharedVideoThumb.prototype.constructor = SharedVideoThumb;
@@ -32,7 +33,7 @@ SharedVideoThumb.prototype.constructor = SharedVideoThumb;
 SharedVideoThumb.prototype.setDeviceAvailabilityIcons = function() {};
 
 // eslint-disable-next-line no-empty-function
-SharedVideoThumb.prototype.avatarChanged = function() {};
+SharedVideoThumb.prototype.initializeAvatar = function() {};
 
 SharedVideoThumb.prototype.createContainer = function(spanId) {
     const container = document.createElement('span');
@@ -63,30 +64,11 @@ SharedVideoThumb.prototype.createContainer = function(spanId) {
 };
 
 /**
- * The thumb click handler.
+ * Triggers re-rendering of the display name using current instance state.
+ *
+ * @returns {void}
  */
-SharedVideoThumb.prototype.videoClick = function() {
-    if (!shouldDisplayTileView(APP.store.getState())) {
-        this._togglePin();
-    }
-};
-
-/**
- * Removes RemoteVideo from the page.
- */
-SharedVideoThumb.prototype.remove = function() {
-    logger.log('Remove shared video thumb', this.id);
-
-    // Remove whole container
-    if (this.container.parentNode) {
-        this.container.parentNode.removeChild(this.container);
-    }
-};
-
-/**
- * Sets the display name for the thumb.
- */
-SharedVideoThumb.prototype.setDisplayName = function(displayName) {
+SharedVideoThumb.prototype.updateDisplayName = function() {
     if (!this.container) {
         logger.warn(`Unable to set displayName - ${this.videoSpanId
         } does not exist`);
@@ -94,8 +76,7 @@ SharedVideoThumb.prototype.setDisplayName = function(displayName) {
         return;
     }
 
-    this.updateDisplayName({
-        displayName: displayName || '',
+    this._renderDisplayName({
         elementID: `${this.videoSpanId}_name`,
         participantID: this.id
     });

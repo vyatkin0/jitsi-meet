@@ -1,6 +1,7 @@
 // @flow
 
 import { LAYOUTS } from './constants';
+import { getPinnedParticipant } from '../base/participants';
 
 declare var interfaceConfig: Object;
 
@@ -73,6 +74,14 @@ export function shouldDisplayTileView(state: Object = {}) {
     return Boolean(
         state['features/video-layout']
             && state['features/video-layout'].tileViewEnabled
-            && !state['features/etherpad'].editing
+            && (!state['features/etherpad']
+                || !state['features/etherpad'].editing)
+
+            // Truthy check is needed for interfaceConfig to prevent errors on
+            // mobile which does not have interfaceConfig. On web, tile view
+            // should never be enabled for filmstrip only mode.
+            && (typeof interfaceConfig === 'undefined'
+                || !interfaceConfig.filmStripOnly)
+            && !getPinnedParticipant(state)
     );
 }

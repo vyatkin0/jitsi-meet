@@ -1,11 +1,10 @@
 // @flow
 
-import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+import { connect } from '../../base/redux';
 
 import { createDeepLinkingPageEvent, sendAnalytics } from '../../analytics';
-import { translate, translateToHTML } from '../../base/i18n';
+import { translate } from '../../base/i18n';
 import { Platform } from '../../base/react';
 import { DialInSummary } from '../../invite';
 
@@ -35,57 +34,40 @@ const _URLS = {
 };
 
 /**
+ * The type of the React {@code Component} props of
+ * {@link DeepLinkingMobilePage}.
+ */
+type Props = {
+
+    /**
+     * The name of the conference attempting to being joined.
+     */
+    _room: string,
+
+    /**
+     * The function to translate human-readable text.
+     */
+    t: Function
+};
+
+/**
  * React component representing mobile browser page.
  *
  * @class DeepLinkingMobilePage
  */
-class DeepLinkingMobilePage extends Component<*, *> {
-    state: Object;
-
-    /**
-     * DeepLinkingMobilePage component's property types.
-     *
-     * @static
-     */
-    static propTypes = {
-        /**
-         * The name of the conference attempting to being joined.
-         */
-        _room: PropTypes.string,
-
-        /**
-         * The function to translate human-readable text.
-         *
-         * @public
-         * @type {Function}
-         */
-        t: PropTypes.func
-    };
-
+class DeepLinkingMobilePage extends Component<Props> {
     /**
      * Initializes a new {@code DeepLinkingMobilePage} instance.
      *
      * @param {Object} props - The read-only React {@code Component} props with
      * which the new instance is to be initialized.
      */
-    constructor(props) {
+    constructor(props: Props) {
         super(props);
 
         // Bind event handlers so they are only bound once per instance.
         this._onDownloadApp = this._onDownloadApp.bind(this);
         this._onOpenApp = this._onOpenApp.bind(this);
-    }
-
-    /**
-     * Initializes the text and URL of the `Start a conference` / `Join the
-     * conversation` button which takes the user to the mobile app.
-     *
-     * @inheritdoc
-     */
-    componentWillMount() {
-        this.setState({
-            joinURL: generateDeepLinkingURL()
-        });
     }
 
     /**
@@ -127,24 +109,23 @@ class DeepLinkingMobilePage extends Component<*, *> {
                             : null
                     }
                     <p className = { `${_SNS}__text` }>
-                        {
-                            translateToHTML(
-                                t,
-                                `${_TNS}.appNotInstalled`,
-                                { app: NATIVE_APP_NAME })
-                        }
+                        { t(`${_TNS}.appNotInstalled`, { app: NATIVE_APP_NAME }) }
                     </p>
                     <a
                         href = { this._generateDownloadURL() }
-                        onClick = { this._onDownloadApp } >
+                        onClick = { this._onDownloadApp }
+                        rel = 'noopener noreferrer'
+                        target = '_blank'>
                         <button className = { downloadButtonClassName }>
                             { t(`${_TNS}.downloadApp`) }
                         </button>
                     </a>
                     <a
                         className = { `${_SNS}__href` }
-                        href = { this.state.joinURL }
-                        onClick = { this._onOpenApp }>
+                        href = { generateDeepLinkingURL() }
+                        onClick = { this._onOpenApp }
+                        rel = 'noopener noreferrer'
+                        target = '_blank'>
                         {/* <button className = { `${_SNS}__button` }> */}
                         { t(`${_TNS}.openApp`) }
                         {/* </button> */}
@@ -190,7 +171,7 @@ class DeepLinkingMobilePage extends Component<*, *> {
             IUS}&efr=1`;
     }
 
-    _onDownloadApp: () => {};
+    _onDownloadApp: () => void;
 
     /**
      * Handles download app button clicks.
@@ -204,7 +185,7 @@ class DeepLinkingMobilePage extends Component<*, *> {
                 'clicked', 'downloadAppButton', { isMobileBrowser: true }));
     }
 
-    _onOpenApp: () => {};
+    _onOpenApp: () => void;
 
     /**
      * Handles open app button clicks.
@@ -231,7 +212,7 @@ class DeepLinkingMobilePage extends Component<*, *> {
  */
 function _mapStateToProps(state) {
     return {
-        _room: state['features/base/conference'].room
+        _room: decodeURIComponent(state['features/base/conference'].room)
     };
 }
 

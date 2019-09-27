@@ -9,7 +9,7 @@ import {
     getCurrentConference
 } from '../conference';
 import JitsiMeetJS, { JitsiConnectionEvents } from '../lib-jitsi-meet';
-import { parseStandardURIString } from '../util';
+import { parseURIString } from '../util';
 
 import {
     CONNECTION_DISCONNECTED,
@@ -18,8 +18,8 @@ import {
     CONNECTION_WILL_CONNECT,
     SET_LOCATION_URL
 } from './actionTypes';
-
-const logger = require('jitsi-meet-logger').getLogger(__filename);
+import { JITSI_CONNECTION_URL_KEY } from './constants';
+import logger from './logger';
 
 /**
  * The error structure passed to the {@link connectionFailed} action.
@@ -71,20 +71,23 @@ export type ConnectionFailedError = {
 /**
  * Opens new connection.
  *
- * @param {string} [id] - The XMPP user's ID (e.g. user@server.com).
+ * @param {string} [id] - The XMPP user's ID (e.g. {@code user@server.com}).
  * @param {string} [password] - The XMPP user's password.
  * @returns {Function}
  */
 export function connect(id: ?string, password: ?string) {
-    return (dispatch: Dispatch<*>, getState: Function) => {
+    return (dispatch: Dispatch<any>, getState: Function) => {
         const state = getState();
         const options = _constructOptions(state);
+        const { locationURL } = state['features/base/connection'];
         const { issuer, jwt } = state['features/base/jwt'];
         const connection
             = new JitsiMeetJS.JitsiConnection(
                 options.appId,
                 jwt && issuer && issuer !== 'anonymous' ? jwt : undefined,
                 options);
+
+        connection[JITSI_CONNECTION_URL_KEY] = locationURL;
 
         dispatch(_connectionWillConnect(connection));
 
@@ -276,18 +279,31 @@ function _connectionWillConnect(connection) {
  * {@code JitsiConnection}.
  */
 function _constructOptions(state) {
-    const defaultOptions = state['features/base/connection'].options;
-    const options = _.merge(
-        {},
-        defaultOptions,
+    // Deep clone the options to make sure we don't modify the object in the
+    // redux store.
+    const options = _.cloneDeep(state['features/base/config']);
 
-        // Lib-jitsi-meet wants the config passed in multiple places and here is
-        // the latest one I have discovered.
-        state['features/base/config'],
-    );
+    // Normalize the BOSH URL.
     let { bosh } = options;
 
     if (bosh) {
+        const { locationURL } = state['features/base/connection'];
+
+        if (bosh.startsWith('//')) {
+            // By default our config.js doesn't include the protocol.
+            bosh = `${locationURL.protocol}${bosh}`;
+        } else if (bosh.startsWith('/')) {
+            // Handle relative URLs, which won't work on mobile.
+            const {
+                protocol,
+                hostname,
+                contextRoot
+            } = parseURIString(locationURL.href);
+
+            // eslint-disable-next-line max-len
+            bosh = `${protocol}//${hostname}${contextRoot || '/'}${bosh.substr(1)}`;
+        }
+
         // Append room to the URL's search.
         const { room } = state['features/base/conference'];
 
@@ -295,16 +311,6 @@ function _constructOptions(state) {
         // lower case at the time of this writing but, unfortunately, they do
         // not ignore case themselves.
         room && (bosh += `?room=${room.toLowerCase()}`);
-
-        // XXX By default, config.js does not add a protocol to the BOSH URL.
-        // Which trips React Native. Make sure there is a protocol in order to
-        // satisfy React Native.
-        if (bosh !== defaultOptions.bosh
-                && !parseStandardURIString(bosh).protocol) {
-            const { protocol } = parseStandardURIString(defaultOptions.bosh);
-
-            protocol && (bosh = protocol + bosh);
-        }
 
         options.bosh = bosh;
     }
@@ -318,7 +324,7 @@ function _constructOptions(state) {
  * @returns {Function}
  */
 export function disconnect() {
-    return (dispatch: Dispatch<*>, getState: Function): Promise<void> => {
+    return (dispatch: Dispatch<any>, getState: Function): Promise<void> => {
         const state = getState();
 
         // The conference we have already joined or are joining.
@@ -362,6 +368,8 @@ export function disconnect() {
 
         if (connection_) {
             promise = promise.then(() => connection_.disconnect());
+        } else {
+            logger.info('No connection found while disconnecting.');
         }
 
         return promise;

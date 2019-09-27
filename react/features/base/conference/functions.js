@@ -1,7 +1,15 @@
 // @flow
 
+import _ from 'lodash';
+
 import { JitsiTrackErrors } from '../lib-jitsi-meet';
-import { getLocalParticipant } from '../participants';
+import {
+    getLocalParticipant,
+    hiddenParticipantJoined,
+    hiddenParticipantLeft,
+    participantJoined,
+    participantLeft
+} from '../participants';
 import { toState } from '../redux';
 
 import {
@@ -11,8 +19,7 @@ import {
     JITSI_CONFERENCE_URL_KEY,
     VIDEO_QUALITY_LEVELS
 } from './constants';
-
-const logger = require('jitsi-meet-logger').getLogger(__filename);
+import logger from './logger';
 
 /**
  * Attach a set of local tracks to a conference.
@@ -42,6 +49,62 @@ export function _addLocalTracksToConference(
     }
 
     return Promise.all(promises);
+}
+
+/**
+ * Logic shared between web and RN which processes the {@code USER_JOINED}
+ * conference event and dispatches either {@link participantJoined} or
+ * {@link hiddenParticipantJoined}.
+ *
+ * @param {Object} store - The redux store.
+ * @param {JitsiMeetConference} conference - The conference for which the
+ * {@code USER_JOINED} event is being processed.
+ * @param {JitsiParticipant} user - The user who has just joined.
+ * @returns {void}
+ */
+export function commonUserJoinedHandling(
+        { dispatch }: Object,
+        conference: Object,
+        user: Object) {
+    const id = user.getId();
+    const displayName = user.getDisplayName();
+
+    if (user.isHidden()) {
+        dispatch(hiddenParticipantJoined(id, displayName));
+    } else {
+        dispatch(participantJoined({
+            botType: user.getBotType(),
+            conference,
+            id,
+            name: displayName,
+            presence: user.getStatus(),
+            role: user.getRole()
+        }));
+    }
+}
+
+/**
+ * Logic shared between web and RN which processes the {@code USER_LEFT}
+ * conference event and dispatches either {@link participantLeft} or
+ * {@link hiddenParticipantLeft}.
+ *
+ * @param {Object} store - The redux store.
+ * @param {JitsiMeetConference} conference - The conference for which the
+ * {@code USER_LEFT} event is being processed.
+ * @param {JitsiParticipant} user - The user who has just left.
+ * @returns {void}
+ */
+export function commonUserLeftHandling(
+        { dispatch }: Object,
+        conference: Object,
+        user: Object) {
+    const id = user.getId();
+
+    if (user.isHidden()) {
+        dispatch(hiddenParticipantLeft(id));
+    } else {
+        dispatch(participantLeft(id, conference));
+    }
 }
 
 /**
@@ -81,6 +144,26 @@ export function forEachConference(
     }
 
     return true;
+}
+
+/**
+ * Returns the display name of the conference.
+ *
+ * @param {Function | Object} stateful - Reference that can be resolved to Redux
+ * state with the {@code toState} function.
+ * @returns {string}
+ */
+export function getConferenceName(stateful: Function | Object): string {
+    const state = toState(stateful);
+    const { callee } = state['features/base/jwt'];
+    const { callDisplayName } = state['features/base/config'];
+    const { pendingSubjectChange, room, subject } = state['features/base/conference'];
+
+    return pendingSubjectChange
+        || subject
+        || callDisplayName
+        || (callee && callee.name)
+        || _.startCase(decodeURIComponent(room));
 }
 
 /**
@@ -136,8 +219,8 @@ export function getNearestReceiverVideoQualityLevel(availableHeight: number) {
 }
 
 /**
- * Handle an error thrown by the backend (i.e. lib-jitsi-meet) while
- * manipulating a conference participant (e.g. pin or select participant).
+ * Handle an error thrown by the backend (i.e. {@code lib-jitsi-meet}) while
+ * manipulating a conference participant (e.g. Pin or select participant).
  *
  * @param {Error} err - The Error which was thrown by the backend while
  * manipulating a conference participant and which is to be handled.

@@ -1,14 +1,18 @@
-/* @flow */
+// @flow
 
 import { Client } from '@microsoft/microsoft-graph-client';
 import rs from 'jsrsasign';
+import type { Dispatch } from 'redux';
 
 import { createDeferred } from '../../../../modules/util/helpers';
 
 import parseURLParams from '../../base/config/parseURLParams';
 import { parseStandardURIString } from '../../base/util';
+import { getShareInfoText } from '../../invite';
 
 import { setCalendarAPIAuthState } from '../actions';
+
+import { findWindows } from 'windows-iana';
 
 /**
  * Constants used for interacting with the Microsoft API.
@@ -31,7 +35,7 @@ const MS_API_CONFIGURATION = {
      *
      * @type {string}
      */
-    MS_API_SCOPES: 'openid profile Calendars.Read',
+    MS_API_SCOPES: 'openid profile Calendars.ReadWrite',
 
     /**
      * See https://docs.microsoft.com/en-us/azure/active-directory/develop/
@@ -76,10 +80,10 @@ export const microsoftCalendarApi = {
      * @param {number} fetchStartDays - The number of days to go back
      * when fetching.
      * @param {number} fetchEndDays - The number of days to fetch.
-     * @returns {function(Dispatch<*>, Function): Promise<CalendarEntries>}
+     * @returns {function(Dispatch<any>, Function): Promise<CalendarEntries>}
      */
     getCalendarEntries(fetchStartDays: ?number, fetchEndDays: ?number) {
-        return (dispatch: Dispatch<*>, getState: Function): Promise<*> => {
+        return (dispatch: Dispatch<any>, getState: Function): Promise<*> => {
             const state = getState()['features/calendar-sync'] || {};
             const token = state.msAuthState && state.msAuthState.accessToken;
 
@@ -106,7 +110,7 @@ export const microsoftCalendarApi = {
                 // get .value of every element from the array of results,
                 // which is an array of events and flatten it to one array
                 // of events
-                .then(result => [].concat(...result.map(en => en.value)))
+                .then(result => [].concat(...result))
                 .then(entries => entries.map(e => formatCalendarEntry(e)));
         };
     },
@@ -117,7 +121,7 @@ export const microsoftCalendarApi = {
      * @returns {function(Dispatch<*, Function>): Promise<string>}
      */
     getCurrentEmail(): Function {
-        return (dispatch: Dispatch<*>, getState: Function) => {
+        return (dispatch: Dispatch<any>, getState: Function) => {
             const { msAuthState = {} }
                 = getState()['features/calendar-sync'] || {};
             const email = msAuthState.userSigninName || '';
@@ -138,10 +142,10 @@ export const microsoftCalendarApi = {
     /**
      * Prompts the participant to sign in to the Microsoft API Client Library.
      *
-     * @returns {function(Dispatch<*>, Function): Promise<void>}
+     * @returns {function(Dispatch<any>, Function): Promise<void>}
      */
     signIn(): Function {
-        return (dispatch: Dispatch<*>, getState: Function) => {
+        return (dispatch: Dispatch<any>, getState: Function) => {
             // Ensure only one popup window at a time.
             if (popupAuthWindow) {
                 popupAuthWindow.focus();
@@ -237,10 +241,10 @@ export const microsoftCalendarApi = {
     /**
      * Returns whether or not the user is currently signed in.
      *
-     * @returns {function(Dispatch<*>, Function): Promise<boolean>}
+     * @returns {function(Dispatch<any>, Function): Promise<boolean>}
      */
     _isSignedIn(): Function {
-        return (dispatch: Dispatch<*>, getState: Function) => {
+        return (dispatch: Dispatch<any>, getState: Function) => {
             const now = new Date().getTime();
             const state
                 = getState()['features/calendar-sync'].msAuthState || {};
@@ -249,7 +253,7 @@ export const microsoftCalendarApi = {
 
             if (state.accessToken && isExpired) {
                 // token expired, let's refresh it
-                return dispatch(this._refreshAuthToken())
+                return dispatch(refreshAuthToken())
                     .then(() => true)
                     .catch(() => false);
             }
@@ -259,54 +263,54 @@ export const microsoftCalendarApi = {
     },
 
     /**
-     * Renews an existing auth token so it can continue to be used.
+     * Updates calendar event by generating new invite URL and editing the event
+     * adding some descriptive text and location.
      *
-     * @private
-     * @returns {function(Dispatch<*>, Function): Promise<void>}
+     * @param {string} id - The event id.
+     * @param {string} calendarId - The id of the calendar to use.
+     * @param {string} location - The location to save to the event.
+     * @returns {function(Dispatch<any>): Promise<string|never>}
      */
-    _refreshAuthToken(): Function {
-        return (dispatch: Dispatch<*>, getState: Function) => {
-            const { microsoftApiApplicationClientID }
-                = getState()['features/base/config'];
-            const { msAuthState = {} }
-                = getState()['features/calendar-sync'] || {};
+    updateCalendarEvent(id: string, calendarId: string, location: string) {
+        return (dispatch: Dispatch<any>, getState: Function): Promise<*> => {
+            const state = getState()['features/calendar-sync'] || {};
+            const token = state.msAuthState && state.msAuthState.accessToken;
 
-            const refreshAuthUrl = getAuthRefreshUrl(
-                microsoftApiApplicationClientID,
-                msAuthState.userDomainType,
-                msAuthState.userSigninName);
-
-            const iframe = document.createElement('iframe');
-
-            iframe.setAttribute('id', 'auth-iframe');
-            iframe.setAttribute('name', 'auth-iframe');
-            iframe.setAttribute('style', 'display: none');
-            iframe.setAttribute('src', refreshAuthUrl);
-
-            const signInPromise = new Promise(resolve => {
-                iframe.onload = () => {
-                    resolve(iframe.contentWindow.location.hash);
-                };
-            });
-
-            // The check for body existence is done for flow, which also runs
-            // against native where document.body may not be defined.
-            if (!document.body) {
-                return Promise.reject(
-                    'Cannot refresh auth token in this environment');
+            if (!token) {
+                return Promise.reject('Not authorized, please sign in!');
             }
 
-            document.body.appendChild(iframe);
+            return getShareInfoText(getState(), location, true/* use html */)
+                .then(text => {
+                    const client = Client.init({
+                        authProvider: done => done(null, token)
+                    });
 
-            return signInPromise.then(hash => {
-                const params = getParamsFromHash(hash);
+                    return client
+                        .api(`/me/events/${id}`)
+                        .get()
+                        .then(description => {
+                            const body = description.body;
 
-                dispatch(setCalendarAPIAuthState({
-                    accessToken: params.access_token,
-                    idToken: params.id_token,
-                    tokenExpires: params.tokenExpires
-                }));
-            });
+                            if (description.bodyPreview) {
+                                body.content
+                                    = `${description.bodyPreview}<br><br>`;
+                            }
+
+                            // replace all new lines from the text with html
+                            // <br> to make it pretty
+                            body.content += text.split('\n').join('<br>');
+
+                            return client
+                                .api(`/me/calendar/events/${id}`)
+                                .patch({
+                                    body,
+                                    location: {
+                                        'displayName': location
+                                    }
+                                });
+                        });
+                });
         };
     }
 };
@@ -317,6 +321,7 @@ export const microsoftCalendarApi = {
  * @param {Object} entry - The Microsoft calendar entry.
  * @private
  * @returns {{
+ *     calendarId: string,
  *     description: string,
  *     endDate: string,
  *     id: string,
@@ -327,6 +332,7 @@ export const microsoftCalendarApi = {
  */
 function formatCalendarEntry(entry) {
     return {
+        calendarId: entry.calendarId,
         description: entry.body.content,
         endDate: entry.end.dateTime,
         id: entry.id,
@@ -479,6 +485,58 @@ function getValidatedTokenParts(tokenInfo, guids, appId) {
 }
 
 /**
+ * Renews an existing auth token so it can continue to be used.
+ *
+ * @private
+ * @returns {function(Dispatch<any>, Function): Promise<void>}
+ */
+function refreshAuthToken(): Function {
+    return (dispatch: Dispatch<any>, getState: Function) => {
+        const { microsoftApiApplicationClientID }
+            = getState()['features/base/config'];
+        const { msAuthState = {} }
+            = getState()['features/calendar-sync'] || {};
+
+        const refreshAuthUrl = getAuthRefreshUrl(
+            microsoftApiApplicationClientID,
+            msAuthState.userDomainType,
+            msAuthState.userSigninName);
+
+        const iframe = document.createElement('iframe');
+
+        iframe.setAttribute('id', 'auth-iframe');
+        iframe.setAttribute('name', 'auth-iframe');
+        iframe.setAttribute('style', 'display: none');
+        iframe.setAttribute('src', refreshAuthUrl);
+
+        const signInPromise = new Promise(resolve => {
+            iframe.onload = () => {
+                resolve(iframe.contentWindow.location.hash);
+            };
+        });
+
+        // The check for body existence is done for flow, which also runs
+        // against native where document.body may not be defined.
+        if (!document.body) {
+            return Promise.reject(
+                'Cannot refresh auth token in this environment');
+        }
+
+        document.body.appendChild(iframe);
+
+        return signInPromise.then(hash => {
+            const params = getParamsFromHash(hash);
+
+            dispatch(setCalendarAPIAuthState({
+                accessToken: params.access_token,
+                idToken: params.id_token,
+                tokenExpires: params.tokenExpires
+            }));
+        });
+    };
+}
+
+/**
  * Retrieves calendar entries from a specific calendar.
  *
  * @param {Object} client - The Microsoft-graph-client initialized.
@@ -504,12 +562,22 @@ function requestCalendarEvents( // eslint-disable-line max-params
         startDate.toISOString()}' and End/DateTime lt '${
         endDate.toISOString()}'`;
 
+    const ianaTimeZone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const windowsTimeZone = findWindows(ianaTimeZone);
+
     return client
         .api(`/me/calendars/${calendarId}/events`)
         .filter(filter)
+        .header('Prefer', `outlook.timezone="${windowsTimeZone}"`)
         .select('id,subject,start,end,location,body')
         .orderby('createdDateTime DESC')
-        .get();
+        .get()
+        .then(result => result.value.map(item => {
+            return {
+                ...item,
+                calendarId
+            };
+        }));
 }
 
 /**

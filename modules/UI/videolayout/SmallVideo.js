@@ -1,4 +1,4 @@
-/* global $, APP, interfaceConfig */
+/* global $, APP, config, interfaceConfig */
 
 /* eslint-disable no-unused-vars */
 import React from 'react';
@@ -10,9 +10,9 @@ import { Provider } from 'react-redux';
 import { i18next } from '../../../react/features/base/i18n';
 import { AudioLevelIndicator }
     from '../../../react/features/audio-level-indicator';
+import { Avatar as AvatarDisplay } from '../../../react/features/base/avatar';
 import {
-    Avatar as AvatarDisplay,
-    getAvatarURLByParticipantId,
+    getParticipantCount,
     getPinnedParticipant,
     pinParticipant
 } from '../../../react/features/base/participants';
@@ -30,6 +30,7 @@ import {
 import {
     LAYOUTS,
     getCurrentLayout,
+    setTileView,
     shouldDisplayTileView
 } from '../../../react/features/video-layout';
 /* eslint-enable no-unused-vars */
@@ -91,9 +92,6 @@ function SmallVideo(VideoLayout) {
     this.VideoLayout = VideoLayout;
     this.videoIsHovered = false;
 
-    // we can stop updating the thumbnail
-    this.disableUpdateView = false;
-
     /**
      * The current state of the user's bridge connection. The value should be
      * a string as enumerated in the library's participantConnectionStatus
@@ -141,6 +139,8 @@ function SmallVideo(VideoLayout) {
     // Bind event handlers so they are only bound once for every instance.
     this._onPopoverHover = this._onPopoverHover.bind(this);
     this.updateView = this.updateView.bind(this);
+
+    this._onContainerClick = this._onContainerClick.bind(this);
 }
 
 /**
@@ -159,53 +159,6 @@ SmallVideo.prototype.getId = function() {
  */
 SmallVideo.prototype.isVisible = function() {
     return this.$container.is(':visible');
-};
-
-/**
- * Enables / disables the device availability icons for this small video.
- * @param {enable} set to {true} to enable and {false} to disable
- */
-SmallVideo.prototype.enableDeviceAvailabilityIcons = function(enable) {
-    if (typeof enable === 'undefined') {
-        return;
-    }
-
-    this.deviceAvailabilityIconsEnabled = enable;
-};
-
-/**
- * Sets the device "non" availability icons.
- * @param devices the devices, which will be checked for availability
- */
-SmallVideo.prototype.setDeviceAvailabilityIcons = function(devices) {
-    if (!this.deviceAvailabilityIconsEnabled) {
-        return;
-    }
-
-    if (!this.container) {
-        return;
-    }
-
-    const noMic = this.$container.find('.noMic');
-    const noVideo = this.$container.find('.noVideo');
-
-    noMic.remove();
-    noVideo.remove();
-    if (!devices.audio) {
-        this.container.appendChild(
-            document.createElement('div')).setAttribute('class', 'noMic');
-    }
-
-    if (!devices.video) {
-        this.container.appendChild(
-            document.createElement('div')).setAttribute('class', 'noVideo');
-    }
-
-    if (!devices.audio && !devices.video) {
-        noMic.css('background-position', '75%');
-        noVideo.css('background-position', '25%');
-        noVideo.css('background-color', 'transparent');
-    }
 };
 
 /**
@@ -242,6 +195,8 @@ SmallVideo.createStreamElement = function(stream) {
 
     if (isVideo) {
         element.setAttribute('muted', 'true');
+    } else if (config.startSilent) {
+        element.muted = true;
     }
 
     element.autoplay = true;
@@ -482,9 +437,11 @@ SmallVideo.prototype.$displayName = function() {
  * Creates or updates the participant's display name that is shown over the
  * video preview.
  *
+ * @param {Object} props - The React {@code Component} props to pass into the
+ * {@code DisplayName} component.
  * @returns {void}
  */
-SmallVideo.prototype.updateDisplayName = function(props) {
+SmallVideo.prototype._renderDisplayName = function(props) {
     const displayNameContainer
         = this.container.querySelector('.displayNameContainer');
 
@@ -554,8 +511,7 @@ SmallVideo.prototype.isCurrentlyOnLargeVideo = function() {
  * or <tt>false</tt> otherwise.
  */
 SmallVideo.prototype.isVideoPlayable = function() {
-    return this.videoStream // Is there anything to display ?
-        && !this.isVideoMuted && !this.videoStream.isMuted(); // Muted ?
+    return this.videoStream && !this.isVideoMuted && !APP.conference.isAudioOnly();
 };
 
 /**
@@ -564,24 +520,40 @@ SmallVideo.prototype.isVideoPlayable = function() {
  * @return {number} one of <tt>DISPLAY_VIDEO</tt>,<tt>DISPLAY_AVATAR</tt>
  * or <tt>DISPLAY_BLACKNESS_WITH_NAME</tt>.
  */
-SmallVideo.prototype.selectDisplayMode = function() {
+SmallVideo.prototype.selectDisplayMode = function(input) {
+
     // Display name is always and only displayed when user is on the stage
-    if (this.isCurrentlyOnLargeVideo()
-        && !shouldDisplayTileView(APP.store.getState())) {
-        return this.isVideoPlayable() && !APP.conference.isAudioOnly()
-            ? DISPLAY_BLACKNESS_WITH_NAME : DISPLAY_AVATAR_WITH_NAME;
-    } else if (this.isVideoPlayable()
-        && this.selectVideoElement().length
-        && !APP.conference.isAudioOnly()) {
+    if (input.isCurrentlyOnLargeVideo && !input.tileViewEnabled) {
+        return input.isVideoPlayable && !input.isAudioOnly ? DISPLAY_BLACKNESS_WITH_NAME : DISPLAY_AVATAR_WITH_NAME;
+    } else if (input.isVideoPlayable && input.hasVideo && !input.isAudioOnly) {
         // check hovering and change state to video with name
-        return this._isHovered()
-            ? DISPLAY_VIDEO_WITH_NAME : DISPLAY_VIDEO;
+        return input.isHovered ? DISPLAY_VIDEO_WITH_NAME : DISPLAY_VIDEO;
     }
 
     // check hovering and change state to avatar with name
-    return this._isHovered()
-        ? DISPLAY_AVATAR_WITH_NAME : DISPLAY_AVATAR;
+    return input.isHovered ? DISPLAY_AVATAR_WITH_NAME : DISPLAY_AVATAR;
+};
 
+/**
+ * Computes information that determine the display mode.
+ *
+ * @returns {Object}
+ */
+SmallVideo.prototype.computeDisplayModeInput = function() {
+    return {
+        isCurrentlyOnLargeVideo: this.isCurrentlyOnLargeVideo(),
+        isHovered: this._isHovered(),
+        isAudioOnly: APP.conference.isAudioOnly(),
+        tileViewEnabled: shouldDisplayTileView(APP.store.getState()),
+        isVideoPlayable: this.isVideoPlayable(),
+        hasVideo: Boolean(this.selectVideoElement().length),
+        connectionStatus: APP.conference.getParticipantConnectionStatus(this.id),
+        mutedWhileDisconnected: this.mutedWhileDisconnected,
+        wasVideoPlayed: this.wasVideoPlayed,
+        videoStream: Boolean(this.videoStream),
+        isVideoMuted: this.isVideoMuted,
+        videoStreamMuted: this.videoStream ? this.videoStream.isMuted() : 'no stream'
+    };
 };
 
 /**
@@ -598,50 +570,54 @@ SmallVideo.prototype._isHovered = function() {
  * Hides or shows the user's avatar.
  * This update assumes that large video had been updated and we will
  * reflect it on this small video.
- *
- * @param show whether we should show the avatar or not
- * video because there is no dominant speaker and no focused speaker
  */
 SmallVideo.prototype.updateView = function() {
-    if (this.disableUpdateView) {
+    if (this.id) {
+        // Init / refresh avatar
+        this.initializeAvatar();
+    } else {
+        logger.error('Unable to init avatar - no id', this);
+
         return;
-    }
-
-    if (!this.hasAvatar) {
-        if (this.id) {
-            // Init avatar
-            this.avatarChanged(
-                getAvatarURLByParticipantId(APP.store.getState(), this.id));
-        } else {
-            logger.error('Unable to init avatar - no id', this);
-
-            return;
-        }
     }
 
     this.$container.removeClass((index, classNames) =>
         classNames.split(' ').filter(name => name.startsWith('display-')));
 
-    // Determine whether video, avatar or blackness should be displayed
-    const displayMode = this.selectDisplayMode();
+    const oldDisplayMode = this.displayMode;
+    let displayModeString = '';
 
-    switch (displayMode) {
+    const displayModeInput = this.computeDisplayModeInput();
+
+    // Determine whether video, avatar or blackness should be displayed
+    this.displayMode = this.selectDisplayMode(displayModeInput);
+
+    switch (this.displayMode) {
     case DISPLAY_AVATAR_WITH_NAME:
+        displayModeString = 'avatar-with-name';
         this.$container.addClass('display-avatar-with-name');
         break;
     case DISPLAY_BLACKNESS_WITH_NAME:
+        displayModeString = 'blackness-with-name';
         this.$container.addClass('display-name-on-black');
         break;
     case DISPLAY_VIDEO:
+        displayModeString = 'video';
         this.$container.addClass('display-video');
         break;
     case DISPLAY_VIDEO_WITH_NAME:
+        displayModeString = 'video-with-name';
         this.$container.addClass('display-name-on-video');
         break;
     case DISPLAY_AVATAR:
     default:
+        displayModeString = 'avatar';
         this.$container.addClass('display-avatar-only');
         break;
+    }
+
+    if (this.displayMode !== oldDisplayMode) {
+        logger.debug(`Displaying ${displayModeString} for ${this.id}, data: [${JSON.stringify(displayModeInput)}]`);
     }
 };
 
@@ -649,19 +625,23 @@ SmallVideo.prototype.updateView = function() {
  * Updates the react component displaying the avatar with the passed in avatar
  * url.
  *
- * @param {string} avatarUrl - The uri to the avatar image.
  * @returns {void}
  */
-SmallVideo.prototype.avatarChanged = function(avatarUrl) {
+SmallVideo.prototype.initializeAvatar = function() {
     const thumbnail = this.$avatar().get(0);
 
     this.hasAvatar = true;
 
     if (thumbnail) {
+        // Maybe add a special case for local participant, as on init of
+        // LocalVideo.js the id is set to "local" but will get updated later.
         ReactDOM.render(
-            <AvatarDisplay
-                className = 'userAvatar'
-                uri = { avatarUrl } />,
+            <Provider store = { APP.store }>
+                <AvatarDisplay
+                    className = 'userAvatar'
+                    participantId = { this.id }
+                    size = { this.$avatar().width() } />
+            </Provider>,
             thumbnail
         );
     }
@@ -789,6 +769,37 @@ SmallVideo.prototype.initBrowserSpecificProperties = function() {
 };
 
 /**
+ * Cleans up components on {@code SmallVideo} and removes itself from the DOM.
+ *
+ * @returns {void}
+ */
+SmallVideo.prototype.remove = function() {
+    logger.log('Remove thumbnail', this.id);
+
+    this.removeAudioLevelIndicator();
+
+    const toolbarContainer
+        = this.container.querySelector('.videocontainer__toolbar');
+
+    if (toolbarContainer) {
+        ReactDOM.unmountComponentAtNode(toolbarContainer);
+    }
+
+    this.removeConnectionIndicator();
+
+    this.removeDisplayName();
+
+    this.removeAvatar();
+
+    this._unmountIndicators();
+
+    // Remove whole container
+    if (this.container.parentNode) {
+        this.container.parentNode.removeChild(this.container);
+    }
+};
+
+/**
  * Helper function for re-rendering multiple react components of the small
  * video.
  *
@@ -819,7 +830,9 @@ SmallVideo.prototype.updateIndicators = function() {
     const iconSize = UIUtil.getIndicatorFontSize();
     const showConnectionIndicator = this.videoIsHovered
         || !interfaceConfig.CONNECTION_INDICATOR_AUTO_HIDE_ENABLED;
-    const currentLayout = getCurrentLayout(APP.store.getState());
+    const state = APP.store.getState();
+    const currentLayout = getCurrentLayout(state);
+    const participantCount = getParticipantCount(state);
     let statsPopoverPosition, tooltipPosition;
 
     if (currentLayout === LAYOUTS.TILE_VIEW) {
@@ -834,6 +847,7 @@ SmallVideo.prototype.updateIndicators = function() {
     }
 
     ReactDOM.render(
+        <Provider store = { APP.store }>
             <I18nextProvider i18n = { i18next }>
                 <div>
                     <AtlasKitThemeProvider mode = 'dark'>
@@ -845,34 +859,78 @@ SmallVideo.prototype.updateIndicators = function() {
                                 isLocalVideo = { this.isLocal }
                                 enableStatsDisplay
                                     = { !interfaceConfig.filmStripOnly }
+                                participantId = { this.id }
                                 statsPopoverPosition
-                                    = { statsPopoverPosition }
-                                userID = { this.id } />
+                                    = { statsPopoverPosition } />
                             : null }
-                        { this._showRaisedHand
-                            ? <RaisedHandIndicator
-                                iconSize = { iconSize }
-                                tooltipPosition = { tooltipPosition } />
-                            : null }
-                        { this._showDominantSpeaker
+                        <RaisedHandIndicator
+                            iconSize = { iconSize }
+                            participantId = { this.id }
+                            tooltipPosition = { tooltipPosition } />
+                        { this._showDominantSpeaker && participantCount > 2
                             ? <DominantSpeakerIndicator
                                 iconSize = { iconSize }
                                 tooltipPosition = { tooltipPosition } />
                             : null }
                     </AtlasKitThemeProvider>
                 </div>
-            </I18nextProvider>,
+            </I18nextProvider>
+        </Provider>,
         indicatorToolbar
     );
 };
 
 /**
- * Pins the participant displayed by this thumbnail or unpins if already pinned.
+ * Callback invoked when the thumbnail is clicked and potentially trigger
+ * pinning of the participant.
  *
+ * @param {MouseEvent} event - The click event to intercept.
  * @private
  * @returns {void}
  */
-SmallVideo.prototype._togglePin = function() {
+SmallVideo.prototype._onContainerClick = function(event) {
+    const triggerPin = this._shouldTriggerPin(event);
+
+    if (event.stopPropagation && triggerPin) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    if (triggerPin) {
+        this.togglePin();
+    }
+
+    return false;
+};
+
+/**
+ * Returns whether or not a click event is targeted at certain elements which
+ * should not trigger a pin.
+ *
+ * @param {MouseEvent} event - The click event to intercept.
+ * @private
+ * @returns {boolean}
+ */
+SmallVideo.prototype._shouldTriggerPin = function(event) {
+    // TODO Checking the classes is a workround to allow events to bubble into
+    // the DisplayName component if it was clicked. React's synthetic events
+    // will fire after jQuery handlers execute, so stop propogation at this
+    // point will prevent DisplayName from getting click events. This workaround
+    // should be removeable once LocalVideo is a React Component because then
+    // the components share the same eventing system.
+    const $source = $(event.target || event.srcElement);
+
+    return $source.parents('.displayNameContainer').length === 0
+        && $source.parents('.popover').length === 0
+        && !event.target.classList.contains('popover');
+};
+
+/**
+ * Pins the participant displayed by this thumbnail or unpins if already pinned.
+ *
+ * @returns {void}
+ */
+SmallVideo.prototype.togglePin = function() {
     const pinnedParticipant
         = getPinnedParticipant(APP.store.getState()) || {};
     const participantIdToPin
@@ -910,5 +968,6 @@ SmallVideo.prototype._onPopoverHover = function(popoverIsHovered) {
     this._popoverIsHovered = popoverIsHovered;
     this.updateView();
 };
+
 
 export default SmallVideo;

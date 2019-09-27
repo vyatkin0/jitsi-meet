@@ -1,10 +1,10 @@
 // @flow
 
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
 
 import { getAvailableDevices } from '../../../base/devices';
 import { DialogWithTabs, hideDialog } from '../../../base/dialog';
+import { connect } from '../../../base/redux';
 import { isCalendarEnabled } from '../../../calendar-sync';
 import {
     DeviceSelection,
@@ -91,11 +91,13 @@ class SettingsDialog extends Component<Props> {
         return (
             <DialogWithTabs
                 closeDialog = { this._closeDialog }
+                cssClassName = 'settings-dialog'
                 defaultTab = {
                     defaultTabIdx === -1 ? undefined : defaultTabIdx
                 }
                 onSubmit = { onSubmit }
-                tabs = { tabs } />
+                tabs = { tabs }
+                titleKey = 'settings.title' />
         );
     }
 
@@ -133,7 +135,7 @@ function _mapStateToProps(state) {
     const showProfileSettings
         = configuredTabs.includes('profile') && jwt.isGuest;
     const showCalendarSettings
-        = configuredTabs.includes('calendar') && isCalendarEnabled();
+        = configuredTabs.includes('calendar') && isCalendarEnabled(state);
     const tabs = [];
 
     if (showDeviceSettings) {
@@ -188,6 +190,17 @@ function _mapStateToProps(state) {
             component: MoreTab,
             label: 'settings.more',
             props: moreTabProps,
+            propsUpdateFunction: (tabState, newProps) => {
+                // Updates tab props, keeping users selection
+
+                return {
+                    ...newProps,
+                    currentLanguage: tabState.currentLanguage,
+                    followMeEnabled: tabState.followMeEnabled,
+                    startAudioMuted: tabState.startAudioMuted,
+                    startVideoMuted: tabState.startVideoMuted
+                };
+            },
             styles: 'settings-pane more-pane',
             submit: submitMoreTab
         });

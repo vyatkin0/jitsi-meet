@@ -16,17 +16,12 @@
 
 /* Mixins END */
 
-/* Animations BEGIN */
-
-@import "animations";
-
 /* Animations END */
 
-/* Fonts BEGIN */
-
-@import 'font';
-@import 'font-awesome';
-/* Fonts END */
+/* Flags BEGIN */
+$flagsImagePath: "../images/";
+@import "../node_modules/bc-css-flags/dist/css/bc-css-flags.scss";
+/* Flags END */
 
 /* Modules BEGIN */
 
@@ -48,6 +43,7 @@
 @import 'modals/local-recording/local-recording';
 @import 'videolayout_default';
 @import 'notice';
+@import 'subject';
 @import 'popup_menu';
 @import 'recording';
 @import 'login_menu';
@@ -56,7 +52,6 @@
 @import 'welcome_page';
 @import 'welcome_page_content';
 @import 'toolbars';
-@import 'side_toolbar_container';
 @import 'jquery.contextMenu';
 @import 'keyboard-shortcuts';
 @import 'redirect_page';
@@ -81,8 +76,10 @@
 @import 'modals/invite/add-people';
 @import 'deep-linking/main';
 @import 'transcription-subtitles';
+@import '_meetings_list.scss';
 @import 'navigate_section_list';
 @import 'third-party-branding/google';
 @import 'third-party-branding/microsoft';
+@import 'avatar';
 
 /* Modules END */

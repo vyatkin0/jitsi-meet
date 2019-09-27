@@ -1,18 +1,16 @@
 /* global interfaceConfig */
 
-import Button from '@atlaskit/button';
-import { FieldTextStateless } from '@atlaskit/field-text';
-import { AtlasKitThemeProvider } from '@atlaskit/theme';
 import React from 'react';
-import { connect } from 'react-redux';
 
-import { DialogContainer } from '../../base/dialog';
 import { translate } from '../../base/i18n';
-import { Watermarks } from '../../base/react';
+import { Platform, Watermarks } from '../../base/react';
+import { connect } from '../../base/redux';
+import { CalendarList } from '../../calendar-sync';
 import { RecentList } from '../../recent-list';
-import { openSettingsDialog } from '../../settings';
+import { SettingsButton, SETTINGS_TABS } from '../../settings';
 
 import { AbstractWelcomePage, _mapStateToProps } from './AbstractWelcomePage';
+import Tabs from './Tabs';
 
 /**
  * The Web container rendering the welcome page.
@@ -42,7 +40,8 @@ class WelcomePage extends AbstractWelcomePage {
             ...this.state,
 
             generateRoomnames:
-                interfaceConfig.GENERATE_ROOMNAMES_ON_WELCOME_PAGE
+                interfaceConfig.GENERATE_ROOMNAMES_ON_WELCOME_PAGE,
+            selectedTab: 0
         };
 
         /**
@@ -66,10 +65,10 @@ class WelcomePage extends AbstractWelcomePage {
 
         // Bind event handlers so they are only bound once per instance.
         this._onFormSubmit = this._onFormSubmit.bind(this);
-        this._onOpenSettings = this._onOpenSettings.bind(this);
         this._onRoomChange = this._onRoomChange.bind(this);
         this._setAdditionalContentRef
             = this._setAdditionalContentRef.bind(this);
+        this._onTabSelected = this._onTabSelected.bind(this);
     }
 
     /**
@@ -81,6 +80,7 @@ class WelcomePage extends AbstractWelcomePage {
      */
     componentDidMount() {
         document.body.classList.add('welcome-page');
+        document.title = interfaceConfig.APP_NAME;
 
         if (this.state.generateRoomnames) {
             this._updateRoomname();
@@ -116,61 +116,61 @@ class WelcomePage extends AbstractWelcomePage {
         const showAdditionalContent = this._shouldShowAdditionalContent();
 
         return (
-            <AtlasKitThemeProvider mode = 'light'>
-                <div
-                    className = { `welcome ${showAdditionalContent
-                        ? 'with-content' : 'without-content'}` }
-                    id = 'welcome_page'>
-                    <div className = 'welcome-watermark'>
-                        <Watermarks />
+            <div
+                className = { `welcome ${showAdditionalContent
+                    ? 'with-content' : 'without-content'}` }
+                id = 'welcome_page'>
+                <div className = 'welcome-watermark'>
+                    <Watermarks />
+                </div>
+                <div className = 'header'>
+                    <div className = 'welcome-page-settings'>
+                        <SettingsButton
+                            defaultTab = { SETTINGS_TABS.CALENDAR } />
                     </div>
-                    <div className = 'header'>
-                        <div className = 'header-image' />
-                        <div className = 'header-text'>
-                            <h1 className = 'header-text-title'>
-                                { t('welcomepage.title') }
-                            </h1>
-                            <p className = 'header-text-description'>
-                                { t('welcomepage.appDescription',
-                                    { app: APP_NAME }) }
-                            </p>
-                        </div>
-                        <div id = 'enter_room'>
-                            <form
-                                className = 'enter-room-input'
-                                onSubmit = { this._onFormSubmit }>
-                                <FieldTextStateless
+                    <div className = 'header-image' />
+                    <div className = 'header-text'>
+                        <h1 className = 'header-text-title'>
+                            { t('welcomepage.title') }
+                        </h1>
+                        <p className = 'header-text-description'>
+                            { t('welcomepage.appDescription',
+                                { app: APP_NAME }) }
+                        </p>
+                    </div>
+                    <div id = 'enter_room'>
+                        <div className = 'enter-room-input-container'>
+                            <div className = 'enter-room-title'>
+                                { t('welcomepage.enterRoomTitle') }
+                            </div>
+                            <form onSubmit = { this._onFormSubmit }>
+                                <input
                                     autoFocus = { true }
+                                    className = 'enter-room-input'
                                     id = 'enter_room_field'
-                                    isLabelHidden = { true }
-                                    label = 'enter_room_field'
                                     onChange = { this._onRoomChange }
+                                    pattern = '^[a-zA-Z0-9=\?]+$'
                                     placeholder = { this.state.roomPlaceholder }
-                                    shouldFitContainer = { true }
+                                    title = { t('welcomepage.onlyAsciiAllowed') }
                                     type = 'text'
                                     value = { this.state.room } />
                             </form>
-                            <Button
-                                appearance = 'primary'
-                                className = 'welcome-page-button'
-                                id = 'enter_room_button'
-                                onClick = { this._onJoin }
-                                type = 'button'>
-                                { t('welcomepage.go') }
-                            </Button>
                         </div>
-                        <RecentList />
+                        <div
+                            className = 'welcome-page-button'
+                            id = 'enter_room_button'
+                            onClick = { this._onJoin }>
+                            { t('welcomepage.go') }
+                        </div>
                     </div>
-                    { showAdditionalContent
-                        ? <div
-                            className = 'welcome-page-content'
-                            ref = { this._setAdditionalContentRef } />
-                        : null }
+                    { this._renderTabs() }
                 </div>
-                <AtlasKitThemeProvider mode = 'dark'>
-                    <DialogContainer />
-                </AtlasKitThemeProvider>
-            </AtlasKitThemeProvider>
+                { showAdditionalContent
+                    ? <div
+                        className = 'welcome-page-content'
+                        ref = { this._setAdditionalContentRef } />
+                    : null }
+            </div>
         );
     }
 
@@ -188,16 +188,6 @@ class WelcomePage extends AbstractWelcomePage {
     }
 
     /**
-     * Opens {@code SettingsDialog}.
-     *
-     * @private
-     * @returns {void}
-     */
-    _onOpenSettings() {
-        this.props.dispatch(openSettingsDialog());
-    }
-
-    /**
      * Overrides the super to account for the differences in the argument types
      * provided by HTML and React Native text inputs.
      *
@@ -209,6 +199,55 @@ class WelcomePage extends AbstractWelcomePage {
      */
     _onRoomChange(event) {
         super._onRoomChange(event.target.value);
+    }
+
+    /**
+     * Callback invoked when the desired tab to display should be changed.
+     *
+     * @param {number} tabIndex - The index of the tab within the array of
+     * displayed tabs.
+     * @private
+     * @returns {void}
+     */
+    _onTabSelected(tabIndex) {
+        this.setState({ selectedTab: tabIndex });
+    }
+
+    /**
+     * Renders tabs to show previous meetings and upcoming calendar events. The
+     * tabs are purposefully hidden on mobile browsers.
+     *
+     * @returns {ReactElement|null}
+     */
+    _renderTabs() {
+        const isMobileBrowser
+            = Platform.OS === 'android' || Platform.OS === 'ios';
+
+        if (isMobileBrowser) {
+            return null;
+        }
+
+        const { _calendarEnabled, t } = this.props;
+
+        const tabs = [];
+
+        if (_calendarEnabled) {
+            tabs.push({
+                label: t('welcomepage.calendar'),
+                content: <CalendarList />
+            });
+        }
+
+        tabs.push({
+            label: t('welcomepage.recentList'),
+            content: <RecentList />
+        });
+
+        return (
+            <Tabs
+                onSelect = { this._onTabSelected }
+                selected = { this.state.selectedTab }
+                tabs = { tabs } />);
     }
 
     /**

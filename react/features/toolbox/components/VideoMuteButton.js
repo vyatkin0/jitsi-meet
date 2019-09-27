@@ -1,7 +1,5 @@
 // @flow
 
-import { connect } from 'react-redux';
-
 import {
     ACTION_SHORTCUT_TRIGGERED,
     VIDEO_MUTE,
@@ -9,12 +7,14 @@ import {
     createToolbarEvent,
     sendAnalytics
 } from '../../analytics';
+import { setAudioOnly } from '../../base/audio-only';
 import { translate } from '../../base/i18n';
 import {
     MEDIA_TYPE,
     VIDEO_MUTISM_AUTHORITY,
     setVideoMuted
 } from '../../base/media';
+import { connect } from '../../base/redux';
 import { AbstractVideoMuteButton } from '../../base/toolbox';
 import type { AbstractButtonProps } from '../../base/toolbox';
 import { isLocalTrackMuted } from '../../base/tracks';
@@ -93,17 +93,6 @@ class VideoMuteButton extends AbstractVideoMuteButton<Props, *> {
     }
 
     /**
-     * Indicates if this button should be disabled or not.
-     *
-     * @override
-     * @protected
-     * @returns {boolean}
-     */
-    _isDisabled() {
-        return this.props._audioOnly;
-    }
-
-    /**
      * Indicates if video is currently muted ot nor.
      *
      * @override
@@ -143,6 +132,11 @@ class VideoMuteButton extends AbstractVideoMuteButton<Props, *> {
      */
     _setVideoMuted(videoMuted: boolean) {
         sendAnalytics(createToolbarEvent(VIDEO_MUTE, { enable: videoMuted }));
+        if (this.props._audioOnly) {
+            this.props.dispatch(
+                setAudioOnly(false, /* ensureTrack */ true));
+        }
+
         this.props.dispatch(
             setVideoMuted(
                 videoMuted,
@@ -168,7 +162,7 @@ class VideoMuteButton extends AbstractVideoMuteButton<Props, *> {
  * }}
  */
 function _mapStateToProps(state): Object {
-    const { audioOnly } = state['features/base/conference'];
+    const { enabled: audioOnly } = state['features/base/audio-only'];
     const tracks = state['features/base/tracks'];
 
     return {

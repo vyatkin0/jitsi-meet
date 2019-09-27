@@ -6,12 +6,30 @@ import { setCalendarEvents } from './actions';
 import { APP_LINK_SCHEME, parseURIString } from '../base/util';
 import { MAX_LIST_LENGTH } from './constants';
 
-const logger = require('jitsi-meet-logger').getLogger(__filename);
+const ALLDAY_EVENT_LENGTH = 23 * 60 * 60 * 1000;
+
+/**
+ * Returns true of the calendar entry is to be displayed in the app, false
+ * otherwise.
+ *
+ * @param {Object} entry - The calendar entry.
+ * @returns {boolean}
+ */
+function _isDisplayableCalendarEntry(entry) {
+    // Entries are displayable if:
+    //   - Ends in the future (future or ongoing events)
+    //   - Is not an all day event and there is only one attendee (these events
+    //     are usually placeholder events that don't need to be shown.)
+    return entry.endDate > Date.now()
+        && !((entry.allDay
+                || entry.endDate - entry.startDate > ALLDAY_EVENT_LENGTH)
+                    && (!entry.attendees || entry.attendees.length < 2));
+}
 
 /**
  * Updates the calendar entries in redux when new list is received. The feature
  * calendar-sync doesn't display all calendar events, it displays unique
- * title, URL, and start time tuples i.e. it doesn't display subsequent
+ * title, URL, and start time tuples, and it doesn't display subsequent
  * occurrences of recurring events, and the repetitions of events coming from
  * multiple calendars.
  *
@@ -29,13 +47,12 @@ export function _updateCalendarEntries(events: Array<Object>) {
     // eslint-disable-next-line no-invalid-this
     const { dispatch, getState } = this;
     const knownDomains = getState()['features/base/known-domains'];
-    const now = Date.now();
     const entryMap = new Map();
 
     for (const event of events) {
         const entry = _parseCalendarEntry(event, knownDomains);
 
-        if (entry && entry.endDate > now) {
+        if (entry && _isDisplayableCalendarEntry(entry)) {
             // As was stated above, we don't display subsequent occurrences of
             // recurring events, and the repetitions of events coming from
             // multiple calendars.
@@ -79,6 +96,31 @@ export function _updateCalendarEntries(events: Array<Object>) {
 }
 
 /**
+ * Checks a string against a positive pattern and a negative pattern. Returns
+ * the string if it matches the positive pattern and doesn't provide any match
+ * against the negative pattern. Null otherwise.
+ *
+ * @param {string} str - The string to check.
+ * @param {string} positivePattern - The positive pattern.
+ * @param {string} negativePattern - The negative pattern.
+ * @returns {string}
+ */
+function _checkPattern(str, positivePattern, negativePattern) {
+    const positiveRegExp = new RegExp(positivePattern, 'gi');
+    let positiveMatch = positiveRegExp.exec(str);
+
+    while (positiveMatch !== null) {
+        const url = positiveMatch[0];
+
+        if (!new RegExp(negativePattern, 'gi').exec(url)) {
+            return url;
+        }
+
+        positiveMatch = positiveRegExp.exec(str);
+    }
+}
+
+/**
  * Updates the calendar entries in Redux when new list is received.
  *
  * @param {Object} event - An event returned from the native calendar.
@@ -89,27 +131,30 @@ export function _updateCalendarEntries(events: Array<Object>) {
 function _parseCalendarEntry(event, knownDomains) {
     if (event) {
         const url = _getURLFromEvent(event, knownDomains);
+        const startDate = Date.parse(event.startDate);
+        const endDate = Date.parse(event.endDate);
 
-        if (url) {
-            const startDate = Date.parse(event.startDate);
-            const endDate = Date.parse(event.endDate);
-
-            if (isNaN(startDate) || isNaN(endDate)) {
-                logger.warn(
-                    'Skipping invalid calendar event',
-                    event.title,
-                    event.startDate,
-                    event.endDate
-                );
-            } else {
-                return {
-                    endDate,
-                    id: event.id,
-                    startDate,
-                    title: event.title,
-                    url
-                };
-            }
+        // we want to hide all events that
+        // - has no start or end date
+        // - for web, if there is no url and we cannot edit the event (has
+        // no calendarId)
+        if (isNaN(startDate)
+            || isNaN(endDate)
+            || (navigator.product !== 'ReactNative'
+                    && !url
+                    && !event.calendarId)) {
+            // Ignore the event.
+        } else {
+            return {
+                allDay: event.allDay,
+                attendees: event.attendees,
+                calendarId: event.calendarId,
+                endDate,
+                id: event.id,
+                startDate,
+                title: event.title,
+                url
+            };
         }
     }
 
@@ -127,11 +172,9 @@ function _parseCalendarEntry(event, knownDomains) {
 function _getURLFromEvent(event, knownDomains) {
     const linkTerminatorPattern = '[^\\s<>$]';
     const urlRegExp
-        = new RegExp(
-        `http(s)?://(${knownDomains.join('|')})/${linkTerminatorPattern}+`,
-        'gi');
-    const schemeRegExp
-        = new RegExp(`${APP_LINK_SCHEME}${linkTerminatorPattern}+`, 'gi');
+        = `http(s)?://(${knownDomains.join('|')})/${linkTerminatorPattern}+`;
+    const schemeRegExp = `${APP_LINK_SCHEME}${linkTerminatorPattern}+`;
+    const excludePattern = '/static/';
     const fieldsToSearch = [
         event.title,
         event.url,
@@ -142,10 +185,12 @@ function _getURLFromEvent(event, knownDomains) {
 
     for (const field of fieldsToSearch) {
         if (typeof field === 'string') {
-            const matches = urlRegExp.exec(field) || schemeRegExp.exec(field);
+            const match
+                = _checkPattern(field, urlRegExp, excludePattern)
+                || _checkPattern(field, schemeRegExp, excludePattern);
 
-            if (matches) {
-                const url = parseURIString(matches[0]);
+            if (match) {
+                const url = parseURIString(match);
 
                 if (url) {
                     return url.toString();

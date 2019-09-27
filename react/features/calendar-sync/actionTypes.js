@@ -8,7 +8,7 @@
  *     type: CLEAR_CALENDAR_INTEGRATION
  * }
  */
-export const CLEAR_CALENDAR_INTEGRATION = Symbol('CLEAR_CALENDAR_INTEGRATION');
+export const CLEAR_CALENDAR_INTEGRATION = 'CLEAR_CALENDAR_INTEGRATION';
 
 /**
  * Action to refresh (re-fetch) the entry list.
@@ -19,7 +19,7 @@ export const CLEAR_CALENDAR_INTEGRATION = Symbol('CLEAR_CALENDAR_INTEGRATION');
  *     isInteractive: boolean
  * }
  */
-export const REFRESH_CALENDAR = Symbol('REFRESH_CALENDAR');
+export const REFRESH_CALENDAR = 'REFRESH_CALENDAR';
 
 /**
  * Action to signal that calendar access has already been requested since the
@@ -31,7 +31,18 @@ export const REFRESH_CALENDAR = Symbol('REFRESH_CALENDAR');
  *     authorization: ?string
  * }
  */
-export const SET_CALENDAR_AUTHORIZATION = Symbol('SET_CALENDAR_AUTHORIZATION');
+export const SET_CALENDAR_AUTHORIZATION = 'SET_CALENDAR_AUTHORIZATION';
+
+/**
+ * Action to update the last error that occurred while trying to authenticate
+ * with or fetch data from the calendar integration.
+ *
+ * {
+ *     type: SET_CALENDAR_ERROR,
+ *     error: ?Object
+ * }
+ */
+export const SET_CALENDAR_ERROR = 'SET_CALENDAR_ERROR';
 
 /**
  * Action to update the current calendar entry list in the store.
@@ -41,7 +52,7 @@ export const SET_CALENDAR_AUTHORIZATION = Symbol('SET_CALENDAR_AUTHORIZATION');
  *     events: Array<Object>
  * }
  */
-export const SET_CALENDAR_EVENTS = Symbol('SET_CALENDAR_EVENTS');
+export const SET_CALENDAR_EVENTS = 'SET_CALENDAR_EVENTS';
 
 /**
  * Action to update calendar type to be used for web.
@@ -52,7 +63,7 @@ export const SET_CALENDAR_EVENTS = Symbol('SET_CALENDAR_EVENTS');
  *     integrationType: string
  * }
  */
-export const SET_CALENDAR_INTEGRATION = Symbol('SET_CALENDAR_INTEGRATION');
+export const SET_CALENDAR_INTEGRATION = 'SET_CALENDAR_INTEGRATION';
 
 /**
  * The type of Redux action which changes Calendar API auth state.
@@ -62,7 +73,7 @@ export const SET_CALENDAR_INTEGRATION = Symbol('SET_CALENDAR_INTEGRATION');
  * }
  * @public
  */
-export const SET_CALENDAR_AUTH_STATE = Symbol('SET_CALENDAR_AUTH_STATE');
+export const SET_CALENDAR_AUTH_STATE = 'SET_CALENDAR_AUTH_STATE';
 
 /**
  * The type of Redux action which changes Calendar Profile email state.
@@ -73,4 +84,17 @@ export const SET_CALENDAR_AUTH_STATE = Symbol('SET_CALENDAR_AUTH_STATE');
  * }
  * @public
  */
-export const SET_CALENDAR_PROFILE_EMAIL = Symbol('SET_CALENDAR_PROFILE_EMAIL');
+export const SET_CALENDAR_PROFILE_EMAIL = 'SET_CALENDAR_PROFILE_EMAIL';
+
+/**
+ * The type of Redux action which denotes whether a request is in flight to get
+ * updated calendar events.
+ *
+ * {
+ *     type: SET_LOADING_CALENDAR_EVENTS,
+ *     isLoadingEvents: string
+ * }
+ * @public
+ */
+export const SET_LOADING_CALENDAR_EVENTS
+    = 'SET_LOADING_CALENDAR_EVENTS';

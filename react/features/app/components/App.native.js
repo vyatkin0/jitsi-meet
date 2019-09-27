@@ -1,33 +1,37 @@
 // @flow
 
 import React from 'react';
-import { Linking } from 'react-native';
 
 import '../../analytics';
 import '../../authentication';
+import { setColorScheme } from '../../base/color-scheme';
+import { DialogContainer } from '../../base/dialog';
+import { updateFlags } from '../../base/flags';
 import '../../base/jwt';
 import { Platform } from '../../base/react';
 import {
     AspectRatioDetector,
     ReducedUIDetector
 } from '../../base/responsive-ui';
+import { updateSettings } from '../../base/settings';
 import '../../google-api';
 import '../../mobile/audio-mode';
+import '../../mobile/back-button';
 import '../../mobile/background';
-import '../../mobile/callkit';
+import '../../mobile/call-integration';
 import '../../mobile/external-api';
 import '../../mobile/full-screen';
 import '../../mobile/permissions';
 import '../../mobile/picture-in-picture';
 import '../../mobile/proximity';
 import '../../mobile/wake-lock';
+import '../../mobile/watchos';
 
+import logger from '../logger';
 import { AbstractApp } from './AbstractApp';
 import type { Props as AbstractAppProps } from './AbstractApp';
 
 declare var __DEV__;
-
-const logger = require('jitsi-meet-logger').getLogger(__filename);
 
 /**
  * The type of React {@code Component} props of {@link App}.
@@ -35,28 +39,24 @@ const logger = require('jitsi-meet-logger').getLogger(__filename);
 type Props = AbstractAppProps & {
 
     /**
-     * Whether the add people feature is enabled.
+     * An object of colors that override the default colors of the app/sdk.
      */
-    addPeopleEnabled: boolean,
+    colorScheme: ?Object,
 
     /**
-     * Whether the dial-out feature is enabled.
+     * Identifier for this app on the native side.
      */
-    dialOutEnabled: boolean,
+    externalAPIScope: string,
 
     /**
-     * Whether Picture-in-Picture is enabled. If {@code true}, a toolbar button
-     * is rendered in the {@link Conference} view to afford entering
-     * Picture-in-Picture.
+     * An object with the feature flags.
      */
-    pictureInPictureEnabled: boolean,
+    flags: Object,
 
     /**
-     * Whether the Welcome page is enabled. If {@code true}, the Welcome page is
-     * rendered when the {@link App} is not at a location (URL) identifying
-     * a Jitsi Meet conference/room.
+     * An object with user information (display name, email, avatar URL).
      */
-    welcomePageEnabled: boolean
+    userInfo: ?Object
 };
 
 /**
@@ -65,6 +65,8 @@ type Props = AbstractAppProps & {
  * @extends AbstractApp
  */
 export class App extends AbstractApp {
+    _init: Promise<*>;
+
     /**
      * Initializes a new {@code App} instance.
      *
@@ -74,9 +76,6 @@ export class App extends AbstractApp {
     constructor(props: Props) {
         super(props);
 
-        // Bind event handlers so they are only bound once for every instance.
-        this._onLinkingURL = this._onLinkingURL.bind(this);
-
         // In the Release configuration, React Native will (intentionally) throw
         // an unhandled JavascriptException for an unhandled JavaScript error.
         // This will effectively kill the app. In accord with the Web, do not
@@ -85,31 +84,23 @@ export class App extends AbstractApp {
     }
 
     /**
-     * Subscribe to notifications about activating URLs registered to be handled
-     * by this app.
+     * Initializes the color scheme.
      *
      * @inheritdoc
-     * @returns {void}
-     * @see https://facebook.github.io/react-native/docs/linking.html
-     */
-    componentWillMount() {
-        super.componentWillMount();
-
-        Linking.addEventListener('url', this._onLinkingURL);
-    }
-
-    /**
-     * Unsubscribe from notifications about activating URLs registered to be
-     * handled by this app.
      *
-     * @inheritdoc
      * @returns {void}
-     * @see https://facebook.github.io/react-native/docs/linking.html
      */
-    componentWillUnmount() {
-        Linking.removeEventListener('url', this._onLinkingURL);
+    componentDidMount() {
+        super.componentDidMount();
 
-        super.componentWillUnmount();
+        this._init.then(() => {
+            // We set these early enough so then we avoid any unnecessary re-renders.
+            const { dispatch } = this.state.store;
+
+            dispatch(setColorScheme(this.props.colorScheme));
+            dispatch(updateFlags(this.props.flags));
+            dispatch(updateSettings(this.props.userInfo || {}));
+        });
     }
 
     /**
@@ -165,20 +156,15 @@ export class App extends AbstractApp {
         }
     }
 
-    _onLinkingURL: (*) => void;
-
     /**
-     * Notified by React's Linking API that a specific URL registered to be
-     * handled by this app was activated.
+     * Renders the platform specific dialog container.
      *
-     * @param {Object} event - The details of the notification/event.
-     * @param {string} event.url - The URL registered to be handled by this app
-     * which was activated.
-     * @private
-     * @returns {void}
+     * @returns {React$Element}
      */
-    _onLinkingURL({ url }) {
-        super._openURL(url);
+    _renderDialogContainer() {
+        return (
+            <DialogContainer />
+        );
     }
 }
 

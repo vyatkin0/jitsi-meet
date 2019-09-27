@@ -1,16 +1,22 @@
 // @flow
 
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+import { Platform } from 'react-native';
 
-import { BottomSheet, hideDialog } from '../../../base/dialog';
+import { ColorSchemeRegistry } from '../../../base/color-scheme';
+import { BottomSheet, hideDialog, isDialogOpen } from '../../../base/dialog';
+import { CHAT_ENABLED, IOS_RECORDING_ENABLED, getFeatureFlag } from '../../../base/flags';
+import { connect } from '../../../base/redux';
+import { StyleType } from '../../../base/styles';
+import { InfoDialogButton, InviteButton } from '../../../invite';
 import { AudioRouteButton } from '../../../mobile/audio-mode';
-import { PictureInPictureButton } from '../../../mobile/picture-in-picture';
 import { LiveStreamButton, RecordButton } from '../../../recording';
 import { RoomLockButton } from '../../../room-lock';
+import { ClosedCaptionButton } from '../../../subtitles';
+import { TileViewButton } from '../../../video-layout';
 
 import AudioOnlyButton from './AudioOnlyButton';
-import { overflowMenuItemStyles } from './styles';
+import RaiseHandButton from './RaiseHandButton';
 import ToggleCameraButton from './ToggleCameraButton';
 
 /**
@@ -19,9 +25,29 @@ import ToggleCameraButton from './ToggleCameraButton';
 type Props = {
 
     /**
+     * The color-schemed stylesheet of the dialog feature.
+     */
+    _bottomSheetStyles: StyleType,
+
+    /**
+     * Whether the chat feature has been enabled. The meeting info button will be displayed in its place when disabled.
+     */
+    _chatEnabled: boolean,
+
+    /**
+     * True if the overflow menu is currently visible, false otherwise.
+     */
+    _isOpen: boolean,
+
+    /**
+     * Whether the recoding button should be enabled or not.
+     */
+    _recordingEnabled: boolean,
+
+    /**
      * Used for hiding the dialog when the selection was completed.
      */
-    dispatch: Function,
+    dispatch: Function
 };
 
 /**
@@ -60,7 +86,7 @@ class OverflowMenu extends Component<Props> {
         const buttonProps = {
             afterClick: this._onCancel,
             showLabel: true,
-            styles: overflowMenuItemStyles
+            styles: this.props._bottomSheetStyles
         };
 
         return (
@@ -69,26 +95,59 @@ class OverflowMenu extends Component<Props> {
                 <ToggleCameraButton { ...buttonProps } />
                 <AudioOnlyButton { ...buttonProps } />
                 <RoomLockButton { ...buttonProps } />
-                <RecordButton { ...buttonProps } />
+                <ClosedCaptionButton { ...buttonProps } />
+                {
+                    this.props._recordingEnabled
+                        && <RecordButton { ...buttonProps } />
+                }
                 <LiveStreamButton { ...buttonProps } />
-                <PictureInPictureButton { ...buttonProps } />
+                <TileViewButton { ...buttonProps } />
+                <InviteButton { ...buttonProps } />
+                {
+                    this.props._chatEnabled
+                        && <InfoDialogButton { ...buttonProps } />
+                }
+                <RaiseHandButton { ...buttonProps } />
             </BottomSheet>
         );
     }
 
-    _onCancel: () => void;
+    _onCancel: () => boolean;
 
     /**
      * Hides this {@code OverflowMenu}.
      *
      * @private
-     * @returns {void}
+     * @returns {boolean}
      */
     _onCancel() {
-        this.props.dispatch(hideDialog(OverflowMenu_));
+        if (this.props._isOpen) {
+            this.props.dispatch(hideDialog(OverflowMenu_));
+
+            return true;
+        }
+
+        return false;
     }
 }
 
-OverflowMenu_ = connect()(OverflowMenu);
+/**
+ * Function that maps parts of Redux state tree into component props.
+ *
+ * @param {Object} state - Redux state.
+ * @private
+ * @returns {Props}
+ */
+function _mapStateToProps(state) {
+    return {
+        _bottomSheetStyles:
+            ColorSchemeRegistry.get(state, 'BottomSheet'),
+        _chatEnabled: getFeatureFlag(state, CHAT_ENABLED, true),
+        _isOpen: isDialogOpen(state, OverflowMenu_),
+        _recordingEnabled: Platform.OS !== 'ios' || getFeatureFlag(state, IOS_RECORDING_ENABLED)
+    };
+}
+
+OverflowMenu_ = connect(_mapStateToProps)(OverflowMenu);
 
 export default OverflowMenu_;
