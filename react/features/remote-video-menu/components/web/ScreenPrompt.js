@@ -1,13 +1,12 @@
-import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
+
+import { Dialog } from '../../../base/dialog';
+import PropTypes from 'prop-types';
 import { FieldTextStateless as TextField } from '@atlaskit/field-text';
-import { Dialog } from '../../base/dialog';
-
-import { translate } from '../../base/i18n';
-
+import { connect } from 'react-redux';
 import { toggleRemoteScreenSharing }
-    from '../../../../modules/remotescreensharing/RemoteScreenSharing';
+    from '../../../../../modules/remotescreensharing/RemoteScreenSharing';
+import { translate } from '../../../base/i18n';
 
 /**
  * Implements a React {@code Component} for displaying a dialog with an field

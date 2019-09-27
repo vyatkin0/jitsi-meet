@@ -1,16 +1,16 @@
-import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-
 import {
     createRemoteVideoMenuButtonEvent,
     sendAnalytics
-} from '../../analytics';
-import { translate } from '../../base/i18n';
+} from '../../../analytics';
+
+import PropTypes from 'prop-types';
 import RemoteVideoMenuButton from './RemoteVideoMenuButton';
+import { translate } from '../../../base/i18n';
 
 /**
- * Implements a React {@link Component} which displays a button for toggle remote screen sharing 
- * 
+ * Implements a React {@link Component} which displays a button for toggle remote screen sharing
+ *
  * @extends Component
  */
 class ShareScreenButton extends Component {
@@ -59,7 +59,7 @@ class ShareScreenButton extends Component {
     render() {
         const { participantID,
             isShared } = this.props;
- 
+
         const classNames = isShared ? 'fa fa-stop' : 'icon-share-desktop';
 
         //const classNames = `icon-share-desktop ${
