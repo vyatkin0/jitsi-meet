@@ -1,5 +1,5 @@
 /* global __dirname */
-
+const webpack = require('webpack');
 const process = require('process');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
@@ -142,6 +142,10 @@ const config = {
         sourceMapFilename: `[name].${minimize ? 'min' : 'js'}.map`
     },
     plugins: [
+        new webpack.ProvidePlugin({
+            $: 'jquery',
+            jQuery: 'jquery'
+        }),
         analyzeBundle
             && new BundleAnalyzerPlugin({
                 analyzerMode: 'disabled',

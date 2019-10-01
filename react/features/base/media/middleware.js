@@ -1,5 +1,13 @@
 // @flow
 
+import { CAMERA_FACING_MODE, VIDEO_MUTISM_AUTHORITY } from './constants';
+import { SET_AUDIO_ONLY, setAudioOnly } from '../audio-only';
+import { SET_ROOM, isRoomValid } from '../conference';
+import { TRACK_ADDED, setTrackMuted } from '../tracks';
+import {
+    _AUDIO_INITIAL_MEDIA_STATE,
+    _VIDEO_INITIAL_MEDIA_STATE
+} from './reducer';
 import {
     createStartAudioOnlyEvent,
     createStartMutedConfigurationEvent,
@@ -7,22 +15,14 @@ import {
     createTrackMutedEvent,
     sendAnalytics
 } from '../../analytics';
-import { APP_STATE_CHANGED } from '../../mobile/background';
+import { setAudioMuted, setCameraFacingMode, setVideoMuted } from './actions';
 
-import { SET_AUDIO_ONLY, setAudioOnly } from '../audio-only';
-import { isRoomValid, SET_ROOM } from '../conference';
+import { APP_STATE_CHANGED } from '../../mobile/background';
 import JitsiMeetJS from '../lib-jitsi-meet';
 import { MiddlewareRegistry } from '../redux';
 import { getPropertyValue } from '../settings';
-import { setTrackMuted, TRACK_ADDED } from '../tracks';
-
-import { setAudioMuted, setCameraFacingMode, setVideoMuted } from './actions';
-import { CAMERA_FACING_MODE, VIDEO_MUTISM_AUTHORITY } from './constants';
+import jitsiLocalStorage from '../../../../modules/util/JitsiLocalStorage';
 import logger from './logger';
-import {
-    _AUDIO_INITIAL_MEDIA_STATE,
-    _VIDEO_INITIAL_MEDIA_STATE
-} from './reducer';
 
 /**
  * Implements the entry point of the middleware of the feature base/media.
