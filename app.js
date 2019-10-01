@@ -1,17 +1,28 @@
 /* application specific logic */
 
-import 'jquery';
 import 'jquery-contextmenu';
 import 'jQuery-Impromptu';
+// TODO The execution of the mobile app starts from react/index.native.js.
+// Similarly, the execution of the Web app should start from react/index.web.js
+// for the sake of consistency and ease of understanding. Temporarily though
+// because we are at the beginning of introducing React into the Web app, allow
+// the execution of the Web app to start from app.js in order to reduce the
+// complexity of the beginning step.
+import './react';
 
-import conference from './conference';
+import $ from 'jquery';
 import API from './modules/API';
+import UI from './modules/UI/UI';
+import conference from './conference';
 import keyboardshortcut from './modules/keyboardshortcut/keyboardshortcut';
 import remoteControl from './modules/remotecontrol/RemoteControl';
 import remoteScreenSharing
     from './modules/remotescreensharing/RemoteScreenSharing';
 import translation from './modules/translation/translation';
-import UI from './modules/UI/UI';
+
+window.jQuery = $;
+window.$ = $;
+
 
 window.APP = {
     API,
@@ -40,10 +51,3 @@ window.APP = {
     UI
 };
 
-// TODO The execution of the mobile app starts from react/index.native.js.
-// Similarly, the execution of the Web app should start from react/index.web.js
-// for the sake of consistency and ease of understanding. Temporarily though
-// because we are at the beginning of introducing React into the Web app, allow
-// the execution of the Web app to start from app.js in order to reduce the
-// complexity of the beginning step.
-import './react';
