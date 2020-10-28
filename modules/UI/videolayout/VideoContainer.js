@@ -1,20 +1,21 @@
 /* global $, APP, interfaceConfig */
 
-/* eslint-disable no-unused-vars */
-import React from 'react';
-import ReactDOM from 'react-dom';
-
-import { browser } from '../../../react/features/base/lib-jitsi-meet';
 import {
-    ORIENTATION,
-    LargeVideoBackground
+    LargeVideoBackground,
+    ORIENTATION
 } from '../../../react/features/large-video';
-/* eslint-enable no-unused-vars */
 
 import Filmstrip from './Filmstrip';
 import LargeContainer from './LargeContainer';
+/* eslint-disable no-unused-vars */
+import React from 'react';
+import ReactDOM from 'react-dom';
 import UIEvents from '../../../service/UI/UIEvents';
 import UIUtil from '../util/UIUtil';
+import { browser } from '../../../react/features/base/lib-jitsi-meet';
+
+/* eslint-enable no-unused-vars */
+
 
 // FIXME should be 'video'
 export const VIDEO_CONTAINER_TYPE = 'camera';
@@ -658,7 +659,7 @@ export class VideoContainer extends LargeContainer {
         // explicitly disabled.
         if (interfaceConfig.DISABLE_VIDEO_BACKGROUND
                 || browser.isFirefox()
-                || browser.isSafariWithWebrtc()) {
+                /*|| browser.isSafariWithWebrtc()*/) {
             return;
         }
 

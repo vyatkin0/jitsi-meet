@@ -51,6 +51,7 @@ deploy-appbundle:
 		$(BUILD_DIR)/video-blur-effect.min.map \
 		$(DEPLOY_DIR)
 
+#cp node_modules/lib-jitsi-meet/lib-jitsi-meet.min.js node_modules/lib-jitsi-meet/lib-jitsi-meet.min.map node_modules/lib-jitsi-meet/connection_optimization/external_connect.js node_modules/lib-jitsi-meet/modules/browser/capabilities.json libs
 deploy-lib-jitsi-meet:
 	cp \
 		$(LIBJITSIMEET_DIR)/lib-jitsi-meet.min.js \
@@ -59,12 +60,14 @@ deploy-lib-jitsi-meet:
 		$(LIBJITSIMEET_DIR)/modules/browser/capabilities.json \
 		$(DEPLOY_DIR)
 
+#cp node_modules/libflacjs/dist/min/libflac4-1.3.2.min.js node_modules/libflacjs/dist/min/libflac4-1.3.2.min.js.mem libs
 deploy-libflac:
 	cp \
 		$(LIBFLAC_DIR)/libflac4-1.3.2.min.js \
 		$(LIBFLAC_DIR)/libflac4-1.3.2.min.js.mem \
 		$(DEPLOY_DIR)
 
+#./node_modules/.bin/node-sass css/main.scss css/all.bundle.css && ./node_modules/.bin/cleancss css/all.bundle.css > css/all.css; rm css/all.bundle.css
 deploy-css:
 	$(NODE_SASS) $(STYLES_MAIN) $(STYLES_BUNDLE) && \
 	$(CLEANCSS) $(STYLES_BUNDLE) > $(STYLES_DESTINATION) ; \

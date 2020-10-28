@@ -14,6 +14,19 @@ var config = {
     // Connection
     //
 
+    var config = {
+        hosts: {
+            domain: 'jitsi.example.com',
+            muc: 'conference.jitsi.example.com',
+            bridge: 'jitsi-videobridge.jitsi.example.com',
+            focus: 'focus.jitsi.example.com'
+        },
+        useNicks: false,
+        bosh: '//jitsi.example.com/http-bind', // FIXME: use xep-0156 for that
+        //chromeExtensionId: 'diibjkoicjeejcmhdnailmkgecihlobk', // Id of desktop streamer Chrome extension
+        //minChromeExtVersion: '0.1' // Required version of Chrome extension
+    };
+
     hosts: {
         // XMPP domain.
         domain: 'jitsi-meet.example.com',
